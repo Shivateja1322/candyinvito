@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { supabase } from "../../lib/supabase";
+import { invitationRepository } from "../../lib/repositories";
 import { useAuth } from "../../lib/auth-context";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -16,35 +16,16 @@ function ClientTemplatesComponent() {
 
   const createInvitationFromTemplate = async (templateId: string) => {
     setIsCreating(templateId);
-
     try {
-      const slug = `invite-${Math.random().toString(36).substring(2, 8)}`;
-
-      const newInvitation = {
-        client_id: user?.id || "local-user",
-        slug: slug,
-        couple_names: "New Couple",
-        status: "Draft",
-        template_id: templateId,
-      };
-
-      try {
-        if (user) {
-          const { error } = await supabase.from("invitations").insert(newInvitation);
-          if (error) throw error;
-        } else {
-          throw new Error("No user");
-        }
-      } catch (dbError: any) {
-        const localInvites = JSON.parse(localStorage.getItem("local_invitations") || "{}");
-        localInvites[slug] = newInvitation;
-        localStorage.setItem("local_invitations", JSON.stringify(localInvites));
-      }
-
+      if (!user) throw new Error("No user");
+      
+      const newInv = await invitationRepository.create(user.id, "New Couple", templateId);
+      
       toast.success("Theme selected! Launching builder...");
-      navigate({ to: `/client/builder/${slug}` });
+      navigate({ to: `/client/builder/${newInv.slug}` });
     } catch (err: any) {
-      toast.error("Failed to create invitation");
+      console.error("Create error:", err);
+      toast.error("Failed to create invitation: " + (err.message || "Unknown error"));
       setIsCreating(null);
     }
   };
@@ -110,7 +91,7 @@ function ClientTemplatesComponent() {
                       Features
                     </p>
                     <div className="flex flex-wrap gap-2 text-sm font-medium text-[#201814]">
-                      {features.length > 0 ? features.join(" · ") : "Minimal layout"}
+                      {features.length > 0 ? features.join(" Â· ") : "Minimal layout"}
                     </div>
                   </div>
                 </div>

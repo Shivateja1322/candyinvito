@@ -1,4 +1,4 @@
-import { supabase } from "../supabase";
+﻿import { supabase } from "../supabase";
 import {
   mockAnalytics,
   mockClients,
@@ -114,7 +114,7 @@ export const invitationRepository = {
         template_id: templateId,
         slug,
         content: {},
-        status: "DRAFT"
+        status: "Draft"
       })
       .select()
       .single();
