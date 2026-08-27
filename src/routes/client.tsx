@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, useNavigate, Navigate, Link, useLocation } from "@tanstack/react-router";
+﻿import { useEffect } from "react";`nimport { createFileRoute, Outlet, useNavigate, Navigate, Link, useLocation } from "@tanstack/react-router";
 import { useAuth } from "../lib/auth-context";
 import {
   LayoutDashboard,
@@ -36,13 +36,14 @@ function ClientLayout() {
     navigate({ to: "/" });
   };
 
-  if (isLoading) {
-    return <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">Loading...</div>;
-  }
+  useEffect(() => {
+    if (!isLoading && !user) {
+      navigate({ to: "/" });
+    }
+  }, [user, isLoading, navigate]);
 
-  if (!user) {
-    // Let Tanstack Router or auth context handle redirect natively, or redirect cleanly
-    return <Navigate to="/" />;
+  if (isLoading || !user) {
+    return <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">Loading...</div>;
   }
   if (user.role !== "CLIENT") {
     return (
