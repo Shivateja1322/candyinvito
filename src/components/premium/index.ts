@@ -1,23 +1,10 @@
-// Motion
-export * from "./motion/Reveal";
-
-// Media
-export * from "./media/MediaImage";
-export * from "./media/BackgroundVideo";
-export * from "./media/HeroMedia";
-
-// Gallery
-export * from "./gallery/Gallery";
-
-// Location
-export * from "./location/LocationCard";
-
-// Audio
-export * from "./audio/BackgroundAudio";
-
-// Typography
-export * from "./typography/Typography";
-
-// Section
-export * from "./section/Section";
-export * from "./rsvp/RsvpModal";
+﻿export { Reveal, StaggerContainer, StaggerItem, type RevealAnimation } from "./motion/Reveal";
+export { MediaImage, type MediaImageProps } from "./media/MediaImage";
+export { BackgroundVideo, type BackgroundVideoProps } from "./media/BackgroundVideo";
+export { HeroMedia, type HeroMediaType, type HeroMediaProps } from "./media/HeroMedia";
+export { Gallery, type GalleryItem, type GalleryLayout, type GalleryProps } from "./gallery/Gallery";
+export { LocationCard, type LocationData, type LocationCardProps } from "./location/LocationCard";
+export { BackgroundAudio, type BackgroundAudioProps } from "./audio/BackgroundAudio";
+export { Typography, type TextVariant, type TypographyProps } from "./typography/Typography";
+export { Section, SectionHeading, type SectionProps, type SectionHeadingProps } from "./section/Section";
+export { RsvpModal, type RsvpModalProps } from "./rsvp/RsvpModal";
