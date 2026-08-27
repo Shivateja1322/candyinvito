@@ -27,9 +27,11 @@ CREATE TABLE IF NOT EXISTS public.deployment_requests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   invitation_id UUID NOT NULL REFERENCES public.invitations(id) ON DELETE CASCADE,
   requested_by UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-  status TEXT NOT NULL CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED')) DEFAULT 'PENDING',
+  status TEXT NOT NULL CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED', 'HOSTED')) DEFAULT 'PENDING',
   rejection_reason TEXT,
   reviewed_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  hosted_at TIMESTAMP WITH TIME ZONE,
+  expires_at TIMESTAMP WITH TIME ZONE,
   reviewed_at TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -91,7 +93,19 @@ ALTER TABLE public.rsvps ENABLE ROW LEVEL SECURITY;
 -- RLS SECURITY HELPER FUNCTIONS
 -- ====================================================================================
 
--- 1. Create the heavily restricted SECURITY DEFINER helper function
+-- 1. Create the heavily restricted SECURITY DEFINER helper function for ADMIN checks
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+    SELECT EXISTS (
+        SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'ADMIN'
+    );
+$$;
+
+-- 2. Create the heavily restricted SECURITY DEFINER helper function
 CREATE OR REPLACE FUNCTION public.is_invitation_published_and_live(inv_id UUID)
 RETURNS BOOLEAN
 LANGUAGE sql
@@ -124,22 +138,22 @@ BEGIN
 
     -- Admins
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins full access users' AND tablename = 'users') THEN
-        CREATE POLICY "Admins full access users" ON public.users FOR ALL USING (EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.role = 'ADMIN'));
+        CREATE POLICY "Admins full access users" ON public.users FOR ALL USING (public.is_admin());
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins full access invitations' AND tablename = 'invitations') THEN
-        CREATE POLICY "Admins full access invitations" ON public.invitations FOR ALL USING (EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.role = 'ADMIN'));
+        CREATE POLICY "Admins full access invitations" ON public.invitations FOR ALL USING (public.is_admin());
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins full access deployment_requests' AND tablename = 'deployment_requests') THEN
-        CREATE POLICY "Admins full access deployment_requests" ON public.deployment_requests FOR ALL USING (EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.role = 'ADMIN'));
+        CREATE POLICY "Admins full access deployment_requests" ON public.deployment_requests FOR ALL USING (public.is_admin());
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins full access deployments' AND tablename = 'deployments') THEN
-        CREATE POLICY "Admins full access deployments" ON public.deployments FOR ALL USING (EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.role = 'ADMIN'));
+        CREATE POLICY "Admins full access deployments" ON public.deployments FOR ALL USING (public.is_admin());
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins full access notifications' AND tablename = 'notifications') THEN
-        CREATE POLICY "Admins full access notifications" ON public.notifications FOR ALL USING (EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.role = 'ADMIN'));
+        CREATE POLICY "Admins full access notifications" ON public.notifications FOR ALL USING (public.is_admin());
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins full access rsvps' AND tablename = 'rsvps') THEN
-        CREATE POLICY "Admins full access rsvps" ON public.rsvps FOR ALL USING (EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.role = 'ADMIN'));
+        CREATE POLICY "Admins full access rsvps" ON public.rsvps FOR ALL USING (public.is_admin());
     END IF;
 
     -- Invitations
