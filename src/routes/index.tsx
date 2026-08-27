@@ -38,10 +38,26 @@ const CRAFT = [
 ];
 
 const STEPS = [
-  { n: "01", t: "Choose a design", d: "Browse the atelier and pick the layout that feels like you." },
-  { n: "02", t: "Make it yours", d: "Edit sections, colors, typography, music and photographs in the studio." },
-  { n: "03", t: "Preview together", d: "Share a private preview link and refine it until it is right." },
-  { n: "04", t: "Go live", d: "We review, publish and host it for the length of your celebration." },
+  {
+    n: "01",
+    t: "Choose a design",
+    d: "Browse the atelier and pick the layout that feels like you.",
+  },
+  {
+    n: "02",
+    t: "Make it yours",
+    d: "Edit sections, colors, typography, music and photographs in the studio.",
+  },
+  {
+    n: "03",
+    t: "Preview together",
+    d: "Share a private preview link and refine it until it is right.",
+  },
+  {
+    n: "04",
+    t: "Go live",
+    d: "We review, publish and host it for the length of your celebration.",
+  },
 ];
 
 function Home() {

@@ -11,11 +11,30 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
-import { Route as ContactRouteImport } from './routes/contact'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as ClientRouteImport } from './routes/client'
 import { Route as FeaturesRouteImport } from './routes/features'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as SetupRouteImport } from './routes/setup'
 import { Route as TemplatesRouteImport } from './routes/templates'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminAnalyticsRouteImport } from './routes/admin/analytics'
+import { Route as AdminDeploymentsRouteImport } from './routes/admin/deployments'
+import { Route as AdminInvitationsRouteImport } from './routes/admin/invitations'
+import { Route as AdminRsvpsRouteImport } from './routes/admin/rsvps'
+import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
+import { Route as AdminTemplatesRouteImport } from './routes/admin/templates'
+import { Route as AdminThemesRouteImport } from './routes/admin/themes'
+import { Route as AdminUsersRouteImport } from './routes/admin/users'
+import { Route as ClientIndexRouteImport } from './routes/client/index'
+import { Route as ClientDeploymentRouteImport } from './routes/client/deployment'
+import { Route as ClientRsvpRouteImport } from './routes/client/rsvp'
+import { Route as ClientTemplatesRouteImport } from './routes/client/templates'
+import { Route as ISlugRouteImport } from './routes/i.$slug'
+import { Route as TemplatesSlugRouteImport } from './routes/templates.$slug'
+import { Route as ClientBuilderSlugRouteImport } from './routes/client/builder.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -27,9 +46,14 @@ const AboutRoute = AboutRouteImport.update({
   path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ContactRoute = ContactRouteImport.update({
-  id: '/contact',
-  path: '/contact',
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClientRoute = ClientRouteImport.update({
+  id: '/client',
+  path: '/client',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FeaturesRoute = FeaturesRouteImport.update({
@@ -42,9 +66,19 @@ const HowItWorksRoute = HowItWorksRouteImport.update({
   path: '/how-it-works',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SetupRoute = SetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TemplatesRoute = TemplatesRouteImport.update({
@@ -52,73 +86,267 @@ const TemplatesRoute = TemplatesRouteImport.update({
   path: '/templates',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDeploymentsRoute = AdminDeploymentsRouteImport.update({
+  id: '/deployments',
+  path: '/deployments',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminInvitationsRoute = AdminInvitationsRouteImport.update({
+  id: '/invitations',
+  path: '/invitations',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminRsvpsRoute = AdminRsvpsRouteImport.update({
+  id: '/rsvps',
+  path: '/rsvps',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTemplatesRoute = AdminTemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminThemesRoute = AdminThemesRouteImport.update({
+  id: '/themes',
+  path: '/themes',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const ClientIndexRoute = ClientIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ClientRoute,
+} as any)
+const ClientDeploymentRoute = ClientDeploymentRouteImport.update({
+  id: '/deployment',
+  path: '/deployment',
+  getParentRoute: () => ClientRoute,
+} as any)
+const ClientRsvpRoute = ClientRsvpRouteImport.update({
+  id: '/rsvp',
+  path: '/rsvp',
+  getParentRoute: () => ClientRoute,
+} as any)
+const ClientTemplatesRoute = ClientTemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
+  getParentRoute: () => ClientRoute,
+} as any)
+const ISlugRoute = ISlugRouteImport.update({
+  id: '/i/$slug',
+  path: '/i/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TemplatesSlugRoute = TemplatesSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => TemplatesRoute,
+} as any)
+const ClientBuilderSlugRoute = ClientBuilderSlugRouteImport.update({
+  id: '/builder/$slug',
+  path: '/builder/$slug',
+  getParentRoute: () => ClientRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/contact': typeof ContactRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/client': typeof ClientRouteWithChildren
   '/features': typeof FeaturesRoute
   '/how-it-works': typeof HowItWorksRoute
+  '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
-  '/templates': typeof TemplatesRoute
+  '/setup': typeof SetupRoute
+  '/templates': typeof TemplatesRouteWithChildren
+  '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/deployments': typeof AdminDeploymentsRoute
+  '/admin/invitations': typeof AdminInvitationsRoute
+  '/admin/rsvps': typeof AdminRsvpsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/templates': typeof AdminTemplatesRoute
+  '/admin/themes': typeof AdminThemesRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/client/deployment': typeof ClientDeploymentRoute
+  '/client/rsvp': typeof ClientRsvpRoute
+  '/client/templates': typeof ClientTemplatesRoute
+  '/i/$slug': typeof ISlugRoute
+  '/templates/$slug': typeof TemplatesSlugRoute
+  '/admin/': typeof AdminIndexRoute
+  '/client/': typeof ClientIndexRoute
+  '/client/builder/$slug': typeof ClientBuilderSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/contact': typeof ContactRoute
   '/features': typeof FeaturesRoute
   '/how-it-works': typeof HowItWorksRoute
+  '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
-  '/templates': typeof TemplatesRoute
+  '/setup': typeof SetupRoute
+  '/templates': typeof TemplatesRouteWithChildren
+  '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/deployments': typeof AdminDeploymentsRoute
+  '/admin/invitations': typeof AdminInvitationsRoute
+  '/admin/rsvps': typeof AdminRsvpsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/templates': typeof AdminTemplatesRoute
+  '/admin/themes': typeof AdminThemesRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/client/deployment': typeof ClientDeploymentRoute
+  '/client/rsvp': typeof ClientRsvpRoute
+  '/client/templates': typeof ClientTemplatesRoute
+  '/i/$slug': typeof ISlugRoute
+  '/templates/$slug': typeof TemplatesSlugRoute
+  '/admin': typeof AdminIndexRoute
+  '/client': typeof ClientIndexRoute
+  '/client/builder/$slug': typeof ClientBuilderSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/contact': typeof ContactRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/client': typeof ClientRouteWithChildren
   '/features': typeof FeaturesRoute
   '/how-it-works': typeof HowItWorksRoute
+  '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
-  '/templates': typeof TemplatesRoute
+  '/setup': typeof SetupRoute
+  '/templates': typeof TemplatesRouteWithChildren
+  '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/deployments': typeof AdminDeploymentsRoute
+  '/admin/invitations': typeof AdminInvitationsRoute
+  '/admin/rsvps': typeof AdminRsvpsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/templates': typeof AdminTemplatesRoute
+  '/admin/themes': typeof AdminThemesRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/client/deployment': typeof ClientDeploymentRoute
+  '/client/rsvp': typeof ClientRsvpRoute
+  '/client/templates': typeof ClientTemplatesRoute
+  '/i/$slug': typeof ISlugRoute
+  '/templates/$slug': typeof TemplatesSlugRoute
+  '/admin/': typeof AdminIndexRoute
+  '/client/': typeof ClientIndexRoute
+  '/client/builder/$slug': typeof ClientBuilderSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/about'
-    | '/contact'
+    | '/admin'
+    | '/client'
     | '/features'
     | '/how-it-works'
+    | '/login'
     | '/pricing'
+    | '/setup'
     | '/templates'
+    | '/admin/analytics'
+    | '/admin/deployments'
+    | '/admin/invitations'
+    | '/admin/rsvps'
+    | '/admin/settings'
+    | '/admin/templates'
+    | '/admin/themes'
+    | '/admin/users'
+    | '/client/deployment'
+    | '/client/rsvp'
+    | '/client/templates'
+    | '/i/$slug'
+    | '/templates/$slug'
+    | '/admin/'
+    | '/client/'
+    | '/client/builder/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
-    | '/contact'
     | '/features'
     | '/how-it-works'
+    | '/login'
     | '/pricing'
+    | '/setup'
     | '/templates'
+    | '/admin/analytics'
+    | '/admin/deployments'
+    | '/admin/invitations'
+    | '/admin/rsvps'
+    | '/admin/settings'
+    | '/admin/templates'
+    | '/admin/themes'
+    | '/admin/users'
+    | '/client/deployment'
+    | '/client/rsvp'
+    | '/client/templates'
+    | '/i/$slug'
+    | '/templates/$slug'
+    | '/admin'
+    | '/client'
+    | '/client/builder/$slug'
   id:
     | '__root__'
     | '/'
     | '/about'
-    | '/contact'
+    | '/admin'
+    | '/client'
     | '/features'
     | '/how-it-works'
+    | '/login'
     | '/pricing'
+    | '/setup'
     | '/templates'
+    | '/admin/analytics'
+    | '/admin/deployments'
+    | '/admin/invitations'
+    | '/admin/rsvps'
+    | '/admin/settings'
+    | '/admin/templates'
+    | '/admin/themes'
+    | '/admin/users'
+    | '/client/deployment'
+    | '/client/rsvp'
+    | '/client/templates'
+    | '/i/$slug'
+    | '/templates/$slug'
+    | '/admin/'
+    | '/client/'
+    | '/client/builder/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
-  ContactRoute: typeof ContactRoute
+  AdminRoute: typeof AdminRouteWithChildren
+  ClientRoute: typeof ClientRouteWithChildren
   FeaturesRoute: typeof FeaturesRoute
   HowItWorksRoute: typeof HowItWorksRoute
+  LoginRoute: typeof LoginRoute
   PricingRoute: typeof PricingRoute
-  TemplatesRoute: typeof TemplatesRoute
+  SetupRoute: typeof SetupRoute
+  TemplatesRoute: typeof TemplatesRouteWithChildren
+  ISlugRoute: typeof ISlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -137,11 +365,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/contact': {
-      id: '/contact'
-      path: '/contact'
-      fullPath: '/contact'
-      preLoaderRoute: typeof ContactRouteImport
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/client': {
+      id: '/client'
+      path: '/client'
+      fullPath: '/client'
+      preLoaderRoute: typeof ClientRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/features': {
@@ -158,11 +393,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HowItWorksRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pricing': {
       id: '/pricing'
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/setup': {
+      id: '/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof SetupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/templates': {
@@ -172,17 +421,190 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TemplatesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/analytics': {
+      id: '/admin/analytics'
+      path: '/analytics'
+      fullPath: '/admin/analytics'
+      preLoaderRoute: typeof AdminAnalyticsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/deployments': {
+      id: '/admin/deployments'
+      path: '/deployments'
+      fullPath: '/admin/deployments'
+      preLoaderRoute: typeof AdminDeploymentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/invitations': {
+      id: '/admin/invitations'
+      path: '/invitations'
+      fullPath: '/admin/invitations'
+      preLoaderRoute: typeof AdminInvitationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/rsvps': {
+      id: '/admin/rsvps'
+      path: '/rsvps'
+      fullPath: '/admin/rsvps'
+      preLoaderRoute: typeof AdminRsvpsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/templates': {
+      id: '/admin/templates'
+      path: '/templates'
+      fullPath: '/admin/templates'
+      preLoaderRoute: typeof AdminTemplatesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/themes': {
+      id: '/admin/themes'
+      path: '/themes'
+      fullPath: '/admin/themes'
+      preLoaderRoute: typeof AdminThemesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/client/': {
+      id: '/client/'
+      path: '/'
+      fullPath: '/client/'
+      preLoaderRoute: typeof ClientIndexRouteImport
+      parentRoute: typeof ClientRoute
+    }
+    '/client/deployment': {
+      id: '/client/deployment'
+      path: '/deployment'
+      fullPath: '/client/deployment'
+      preLoaderRoute: typeof ClientDeploymentRouteImport
+      parentRoute: typeof ClientRoute
+    }
+    '/client/rsvp': {
+      id: '/client/rsvp'
+      path: '/rsvp'
+      fullPath: '/client/rsvp'
+      preLoaderRoute: typeof ClientRsvpRouteImport
+      parentRoute: typeof ClientRoute
+    }
+    '/client/templates': {
+      id: '/client/templates'
+      path: '/templates'
+      fullPath: '/client/templates'
+      preLoaderRoute: typeof ClientTemplatesRouteImport
+      parentRoute: typeof ClientRoute
+    }
+    '/i/$slug': {
+      id: '/i/$slug'
+      path: '/i/$slug'
+      fullPath: '/i/$slug'
+      preLoaderRoute: typeof ISlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/templates/$slug': {
+      id: '/templates/$slug'
+      path: '/$slug'
+      fullPath: '/templates/$slug'
+      preLoaderRoute: typeof TemplatesSlugRouteImport
+      parentRoute: typeof TemplatesRoute
+    }
+    '/client/builder/$slug': {
+      id: '/client/builder/$slug'
+      path: '/builder/$slug'
+      fullPath: '/client/builder/$slug'
+      preLoaderRoute: typeof ClientBuilderSlugRouteImport
+      parentRoute: typeof ClientRoute
+    }
   }
 }
+
+interface AdminRouteChildren {
+  AdminAnalyticsRoute: typeof AdminAnalyticsRoute
+  AdminDeploymentsRoute: typeof AdminDeploymentsRoute
+  AdminInvitationsRoute: typeof AdminInvitationsRoute
+  AdminRsvpsRoute: typeof AdminRsvpsRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminTemplatesRoute: typeof AdminTemplatesRoute
+  AdminThemesRoute: typeof AdminThemesRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminAnalyticsRoute: AdminAnalyticsRoute,
+  AdminDeploymentsRoute: AdminDeploymentsRoute,
+  AdminInvitationsRoute: AdminInvitationsRoute,
+  AdminRsvpsRoute: AdminRsvpsRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
+  AdminTemplatesRoute: AdminTemplatesRoute,
+  AdminThemesRoute: AdminThemesRoute,
+  AdminUsersRoute: AdminUsersRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface ClientRouteChildren {
+  ClientDeploymentRoute: typeof ClientDeploymentRoute
+  ClientRsvpRoute: typeof ClientRsvpRoute
+  ClientTemplatesRoute: typeof ClientTemplatesRoute
+  ClientIndexRoute: typeof ClientIndexRoute
+  ClientBuilderSlugRoute: typeof ClientBuilderSlugRoute
+}
+
+const ClientRouteChildren: ClientRouteChildren = {
+  ClientDeploymentRoute: ClientDeploymentRoute,
+  ClientRsvpRoute: ClientRsvpRoute,
+  ClientTemplatesRoute: ClientTemplatesRoute,
+  ClientIndexRoute: ClientIndexRoute,
+  ClientBuilderSlugRoute: ClientBuilderSlugRoute,
+}
+
+const ClientRouteWithChildren =
+  ClientRoute._addFileChildren(ClientRouteChildren)
+
+interface TemplatesRouteChildren {
+  TemplatesSlugRoute: typeof TemplatesSlugRoute
+}
+
+const TemplatesRouteChildren: TemplatesRouteChildren = {
+  TemplatesSlugRoute: TemplatesSlugRoute,
+}
+
+const TemplatesRouteWithChildren = TemplatesRoute._addFileChildren(
+  TemplatesRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
-  ContactRoute: ContactRoute,
+  AdminRoute: AdminRouteWithChildren,
+  ClientRoute: ClientRouteWithChildren,
   FeaturesRoute: FeaturesRoute,
   HowItWorksRoute: HowItWorksRoute,
+  LoginRoute: LoginRoute,
   PricingRoute: PricingRoute,
-  TemplatesRoute: TemplatesRoute,
+  SetupRoute: SetupRoute,
+  TemplatesRoute: TemplatesRouteWithChildren,
+  ISlugRoute: ISlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

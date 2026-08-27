@@ -23,9 +23,6 @@ export function SiteFooter() {
           <Link to="/pricing" className="text-muted-foreground hover:text-foreground">
             Pricing
           </Link>
-          <Link to="/contact" className="text-muted-foreground hover:text-foreground">
-            Contact
-          </Link>
         </nav>
       </div>
       <div className="mx-auto max-w-6xl px-6 pb-10">

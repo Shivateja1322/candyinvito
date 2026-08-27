@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { PageHero, SiteLayout } from "@/components/site/SiteLayout";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,7 +16,8 @@ export const Route = createFileRoute("/templates")({
       { property: "og:title", content: "Invitation Templates — CandyInvito" },
       {
         property: "og:description",
-        content: "Editorial, botanical, royal and minimal digital wedding invitation designs.",
+        content:
+          "Editorial, botanical, royal and minimal digital wedding invitation designs.",
       },
     ],
   }),
@@ -65,29 +66,40 @@ function TemplatesPage() {
         {data && data.length > 0 && (
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
             {data.map((template) => (
-              <article key={template.id} className="group reveal">
+              <Link
+                key={template.id}
+                to="/templates/$slug"
+                params={{ slug: template.slug }}
+                className="group reveal block"
+              >
                 <div className="relative aspect-[3/4] overflow-hidden bg-secondary">
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 border border-border transition-transform duration-700 group-hover:scale-[1.02]">
                     <span aria-hidden className="text-gold">
                       ✦
                     </span>
-                    <span className="font-display text-3xl">{template.name}</span>
+                    <span className="font-display text-3xl">
+                      {template.name}
+                    </span>
                     <span className="eyebrow">{template.style}</span>
                   </div>
+
                   {template.isPremium && (
                     <span className="absolute top-4 right-4 border border-gold px-2.5 py-1 text-[0.6rem] tracking-[0.2em] text-primary uppercase">
                       Premium
                     </span>
                   )}
                 </div>
+
                 <h2 className="mt-5 text-lg">{template.name}</h2>
+
                 <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
                   {template.tagline}
                 </p>
+
                 <p className="mt-3 text-xs text-muted-foreground">
                   {template.sections.length} sections
                 </p>
-              </article>
+              </Link>
             ))}
           </div>
         )}

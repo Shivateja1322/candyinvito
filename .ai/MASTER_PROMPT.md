@@ -4,12 +4,14 @@ This file holds the permanent development rules for CandyInvito. Do not rewrite
 it during normal development. Modify only when fundamental rules change.
 
 ## Product
+
 CandyInvito is a premium digital wedding invitation platform. Admins manage
 clients, invitations, templates, themes, deployments, analytics and settings.
 Clients create/customize/preview/deploy invitations. Guests experience a
 cinematic invitation.
 
 ## Non-negotiable rules
+
 1. FRONTEND FIRST. No production backend (Supabase auth/DB/RLS/storage/APIs)
    unless explicitly requested. Use realistic mock data behind repositories.
 2. MOCK ABSTRACTION. UI → repository/service layer → mock implementation.
@@ -35,6 +37,7 @@ cinematic invitation.
 12. SECURITY. No secrets in frontend code. Client-side role checks are UX only.
 
 ## Continuation protocol
+
 Read all `.ai/` files → inspect repo → identify current phase/task → understand
 existing code → implement → verify → update STATUS + LOG → state the next exact
 task.

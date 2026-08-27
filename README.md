@@ -660,15 +660,15 @@ Conceptually:
 
 UI
 
- ↓
+↓
 
 Repository / Service Layer
 
- ↓
+↓
 
 Mock Implementation
 
- ↓
+↓
 
 Future Supabase Implementation
 
@@ -1010,19 +1010,19 @@ Potential routes:
 
 /
 
- /templates
+/templates
 
- /features
+/features
 
- /how-it-works
+/how-it-works
 
- /pricing
+/pricing
 
- /about
+/about
 
- /contact
+/contact
 
- /login
+/login
 
 The exact route structure may evolve.
 
@@ -1272,23 +1272,23 @@ Concept:
 
 Template
 
- ↓
+↓
 
 Sections
 
- ↓
+↓
 
 Content
 
- ↓
+↓
 
 Theme
 
- ↓
+↓
 
 Animations
 
- ↓
+↓
 
 Invitation
 
@@ -1416,39 +1416,39 @@ Workflow:
 
 CLIENT
 
- ↓
+↓
 
 Creates invitation
 
- ↓
+↓
 
 Saves draft
 
- ↓
+↓
 
 Requests deployment
 
- ↓
+↓
 
 ADMIN reviews
 
- ↓
+↓
 
 ADMIN approves/rejects
 
- ↓
+↓
 
 ADMIN selects duration
 
- ↓
+↓
 
 Invitation goes LIVE
 
- ↓
+↓
 
 Deployment remains active
 
- ↓
+↓
 
 Deployment expires
 

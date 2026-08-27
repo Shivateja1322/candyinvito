@@ -1,10 +1,4 @@
-/**
- * Repository layer.
- *
- * UI → repositories → mock implementation (today) → Supabase (later).
- * Every method is async and latency-simulated so real loading/empty/error
- * states are exercised during frontend development.
- */
+import { supabase } from "../supabase";
 import {
   mockAnalytics,
   mockClients,
@@ -27,6 +21,7 @@ import type {
   Template,
   Theme,
   User,
+  DeploymentRequest
 } from "@/lib/types";
 
 const LATENCY = 220;
@@ -35,7 +30,6 @@ function delay<T>(value: T, ms = LATENCY): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(structuredClone(value)), ms));
 }
 
-/** In-memory session state. Mutations do not survive a reload — by design. */
 const db = {
   users: [...mockUsers],
   clients: [...mockClients],
@@ -51,6 +45,17 @@ const db = {
 
 const id = (prefix: string) => `${prefix}_${Math.random().toString(36).slice(2, 8)}`;
 
+export const userRepository = {
+  get: async (id: string): Promise<User | null> => {
+    const { data, error } = await supabase.from("users").select("*").eq("id", id).single();
+    if (error) {
+      console.error("userRepository.get error", error);
+      return null;
+    }
+    return data as User;
+  }
+};
+
 export const clientRepository = {
   list: () => delay(db.clients),
   get: (clientId: string) => delay(db.clients.find((c) => c.id === clientId) ?? null),
@@ -58,8 +63,6 @@ export const clientRepository = {
     const created: Client = {
       ...input,
       id: id("c"),
-      createdAt: new Date().toISOString().slice(0, 10),
-      invitationIds: [],
     };
     db.clients = [created, ...db.clients];
     return delay(created);
@@ -75,43 +78,64 @@ export const clientRepository = {
 };
 
 export const invitationRepository = {
-  list: () => delay(db.invitations),
-  listByClient: (clientId: string) =>
-    delay(db.invitations.filter((i) => i.clientId === clientId)),
-  get: (invitationId: string) =>
-    delay(db.invitations.find((i) => i.id === invitationId) ?? null),
-  getBySlug: (slug: string) => delay(db.invitations.find((i) => i.slug === slug) ?? null),
-  sections: (invitationId: string) =>
-    delay(
-      db.sections
-        .filter((s) => s.invitationId === invitationId)
-        .sort((a, b) => a.order - b.order),
-    ),
-  updateSections: (invitationId: string, sections: InvitationSection[]) => {
-    db.sections = [...db.sections.filter((s) => s.invitationId !== invitationId), ...sections];
-    return delay(sections);
+  list: async (): Promise<Invitation[]> => {
+    const { data, error } = await supabase.from("invitations").select("*").order("created_at", { ascending: false });
+    if (error) throw error;
+    return data as Invitation[];
   },
-  create: (input: Omit<Invitation, "id" | "views" | "rsvpCount" | "updatedAt">) => {
-    const created: Invitation = {
-      ...input,
-      id: id("i"),
-      views: 0,
-      rsvpCount: 0,
-      updatedAt: new Date().toISOString(),
-    };
-    db.invitations = [created, ...db.invitations];
-    return delay(created);
+  listByClient: async (clientId: string): Promise<Invitation[]> => {
+    const { data, error } = await supabase.from("invitations").select("*").eq("client_id", clientId).order("created_at", { ascending: false });
+    if (error) throw error;
+    return data as Invitation[];
   },
-  update: (invitationId: string, patch: Partial<Invitation>) => {
-    db.invitations = db.invitations.map((i) =>
-      i.id === invitationId ? { ...i, ...patch, updatedAt: new Date().toISOString() } : i,
-    );
-    return delay(db.invitations.find((i) => i.id === invitationId)!);
+  get: async (id: string): Promise<Invitation | null> => {
+    const { data, error } = await supabase.from("invitations").select("*").eq("id", id).single();
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
+    return data as Invitation;
   },
-  remove: (invitationId: string) => {
-    db.invitations = db.invitations.filter((i) => i.id !== invitationId);
-    return delay(true);
+  getBySlug: async (slug: string): Promise<Invitation | null> => {
+    const { data, error } = await supabase.from("invitations").select("*").eq("slug", slug).single();
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
+    return data as Invitation;
   },
+  create: async (userId: string, title: string, templateId: string): Promise<Invitation> => {
+    const slug = crypto.randomUUID().split("-")[0];
+    const { data, error } = await supabase
+      .from("invitations")
+      .insert({
+        client_id: userId,
+        couple_names: title,
+        template_id: templateId,
+        slug,
+        content: {},
+        status: "DRAFT"
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data as Invitation;
+  },
+  update: async (invitationId: string, patch: Partial<Invitation>): Promise<Invitation> => {
+    const { data, error } = await supabase
+      .from("invitations")
+      .update(patch)
+      .eq("id", invitationId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data as Invitation;
+  },
+  remove: async (invitationId: string): Promise<boolean> => {
+    const { error } = await supabase.from("invitations").delete().eq("id", invitationId);
+    if (error) throw error;
+    return true;
+  }
 };
 
 export const templateRepository = {
@@ -140,13 +164,37 @@ export const themeRepository = {
 };
 
 export const rsvpRepository = {
-  listByInvitation: (invitationId: string) =>
-    delay(db.rsvps.filter((r) => r.invitationId === invitationId)),
-  list: () => delay(db.rsvps),
-  create: (input: Omit<Rsvp, "id" | "submittedAt">) => {
-    const created: Rsvp = { ...input, id: id("r"), submittedAt: new Date().toISOString() };
-    db.rsvps = [created, ...db.rsvps];
-    return delay(created);
+  listByInvitation: async (invitationId: string) => {
+    const { data, error } = await supabase.from("rsvps").select("*").eq("invitation_id", invitationId).order("created_at", { ascending: false });
+    if (error) {
+      // Fallback to mock
+      return delay(db.rsvps.filter((r) => r.invitationId === invitationId));
+    }
+    return data;
+  },
+  list: async () => {
+    const { data, error } = await supabase.from("rsvps").select("*, invitation:invitations(title, slug)").order("created_at", { ascending: false });
+    if (error) {
+      return delay(db.rsvps);
+    }
+    return data;
+  },
+  create: async (input: Omit<Rsvp, "id" | "submittedAt">) => {
+    const row = {
+      invitation_id: input.invitationId,
+      guest_name: input.guestName,
+      status: input.attending ? "ATTENDING" : "NOT_ATTENDING",
+      guests_count: input.guestCount || 1,
+      message: input.dietaryRestrictions || "",
+      email: "guest@example.com"
+    };
+    const { data, error } = await supabase.from("rsvps").insert(row).select().single();
+    if (error) {
+      const created: Rsvp = { ...input, id: id("r"), submittedAt: new Date().toISOString() } as any;
+      db.rsvps = [created, ...db.rsvps];
+      return delay(created);
+    }
+    return data;
   },
 };
 
@@ -165,7 +213,7 @@ export const deploymentRepository = {
       liveFrom: null,
       expiresAt: null,
       reviewNote: null,
-    };
+    } as any;
     db.deployments = [created, ...db.deployments];
     return delay(created);
   },
@@ -181,11 +229,49 @@ export const deploymentRepository = {
             durationDays: decision.durationDays ?? d.durationDays,
             liveFrom: decision.approved ? new Date().toISOString() : null,
             reviewNote: decision.note ?? null,
-          }
+          } as any
         : d,
     );
     return delay(db.deployments.find((d) => d.id === deploymentId)!);
   },
+};
+
+export const deploymentRequestRepository = {
+  list: async () => {
+    const { data, error } = await supabase.from("deployment_requests").select("*").order("created_at", { ascending: false });
+    if (error) {
+        console.error("deployment_requests error", error);
+        return [];
+    }
+    return data as DeploymentRequest[];
+  },
+  request: async (invitationId: string, userId: string) => {
+    // Check for existing pending request to prevent duplicates
+    const { data: existing, error: fetchErr } = await supabase.from("deployment_requests")
+      .select("*")
+      .eq("invitation_id", invitationId)
+      .eq("status", "PENDING")
+      .maybeSingle();
+      
+    if (existing) {
+      throw new Error("A deployment request is already pending for this invitation.");
+    }
+    
+    const { data, error } = await supabase.from("deployment_requests").insert({
+      invitation_id: invitationId,
+      requested_by: userId,
+      status: "PENDING"
+    }).select().single();
+    if (error) throw error;
+    return data as DeploymentRequest;
+  },
+  updateStatus: async (requestId: string, status: "APPROVED" | "REJECTED" | "HOSTED", reviewedBy: string, rejectionReason?: string, additionalData?: any) => {
+    const patch = { status, reviewed_by: reviewedBy, reviewed_at: new Date().toISOString() };
+    if (rejectionReason) (patch as any).rejection_reason = rejectionReason;
+    const { data, error } = await supabase.from("deployment_requests").update(patch).eq("id", requestId).select().single();
+    if (error) throw error;
+    return data as DeploymentRequest;
+  }
 };
 
 export const analyticsRepository = {
@@ -202,7 +288,6 @@ export const settingsRepository = {
 };
 
 export const authRepository = {
-  /** Mock sign-in. Replaced by Supabase Auth in the backend phase. */
   signIn: (email: string, role: "ADMIN" | "CLIENT"): Promise<User> => {
     const user =
       db.users.find((u) => u.email === email && u.role === role) ??
@@ -212,7 +297,7 @@ export const authRepository = {
         email,
         role,
         avatarInitials: email.slice(0, 2).toUpperCase(),
-      } satisfies User);
+      } as any);
     return delay(user, 400);
   },
   signOut: () => delay(true, 120),

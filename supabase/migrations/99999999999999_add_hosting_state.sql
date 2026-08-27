@@ -1,0 +1,6 @@
+BEGIN;
+ALTER TYPE deployment_request_state ADD VALUE IF NOT EXISTS 'HOSTED';
+
+ALTER TABLE public.deployment_requests ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE public.deployment_requests ADD COLUMN IF NOT EXISTS hosted_at TIMESTAMP WITH TIME ZONE;
+COMMIT;
