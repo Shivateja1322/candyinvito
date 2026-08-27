@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import heroImage from "@/assets/hero-wedding.jpg";
+import { SplashIntro } from "@/components/SplashIntro";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -62,7 +63,8 @@ const STEPS = [
 
 function Home() {
   return (
-    <SiteLayout>
+    <SplashIntro>
+      <SiteLayout>
       {/* Hero */}
       <section className="relative -mt-20 overflow-hidden">
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 pt-32 pb-20 md:grid-cols-[1.05fr_0.95fr] md:pt-40 md:pb-28">
@@ -150,7 +152,7 @@ function Home() {
             Let your guests feel the wedding before they arrive.
           </h2>
           <Link
-            to="/contact"
+            to="/login"
             className="mt-10 inline-block border border-gold px-8 py-3.5 text-xs tracking-[0.22em] text-ink-foreground uppercase transition-colors hover:bg-gold hover:text-gold-foreground"
           >
             Begin your invitation
@@ -158,5 +160,6 @@ function Home() {
         </div>
       </section>
     </SiteLayout>
+    </SplashIntro>
   );
 }

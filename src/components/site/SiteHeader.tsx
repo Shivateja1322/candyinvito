@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+﻿import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Monogram } from "./Monogram";
@@ -7,7 +7,7 @@ const NAV = [
   { to: "/templates", label: "Templates" },
   { to: "/features", label: "Features" },
   { to: "/how-it-works", label: "How it works" },
-  { to: "/pricing", label: "Pricing" },
+  
   { to: "/about", label: "About" },
 ] as const;
 
@@ -46,7 +46,7 @@ export function SiteHeader() {
 
         <div className="hidden md:block">
           <Link
-            to="/contact"
+            to="/login"
             className="border border-ink px-5 py-2.5 text-xs tracking-[0.2em] uppercase transition-colors hover:bg-ink hover:text-ink-foreground"
           >
             Begin
@@ -77,7 +77,7 @@ export function SiteHeader() {
                 {item.label}
               </Link>
             ))}
-            <Link to="/contact" onClick={() => setOpen(false)} className="py-4 text-sm text-primary">
+            <Link to="/login" onClick={() => setOpen(false)} className="py-4 text-sm text-primary">
               Begin your invitation
             </Link>
           </nav>

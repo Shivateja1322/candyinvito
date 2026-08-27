@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+﻿import { Link } from "@tanstack/react-router";
 import { Monogram } from "./Monogram";
 
 export function SiteFooter() {
@@ -19,9 +19,6 @@ export function SiteFooter() {
           </Link>
           <Link to="/features" className="text-muted-foreground hover:text-foreground">
             Features
-          </Link>
-          <Link to="/pricing" className="text-muted-foreground hover:text-foreground">
-            Pricing
           </Link>
         </nav>
       </div>

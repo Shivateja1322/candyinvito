@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+﻿import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react"; import { AuthProvider } from "../lib/auth-context";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -77,14 +77,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "CandyInvito — Premium Digital Wedding Invitations" },
+      { title: "CandyInvito â€” Premium Digital Wedding Invitations" },
       {
         name: "description",
         content:
           "Design, customize and share a cinematic digital wedding invitation with RSVP, livestream and analytics built in.",
       },
       { name: "author", content: "CandyInvito" },
-      { property: "og:title", content: "CandyInvito — Premium Digital Wedding Invitations" },
+      { property: "og:title", content: "CandyInvito â€” Premium Digital Wedding Invitations" },
       {
         property: "og:description",
         content: "Cinematic digital wedding invitations with RSVP, livestream and analytics.",
@@ -132,8 +132,8 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      {/* Required: nested routes render here. Removing <AuthProvider><Outlet /></AuthProvider> breaks all child routes. */}
+      <AuthProvider><Outlet /></AuthProvider>
     </QueryClientProvider>
   );
 }
