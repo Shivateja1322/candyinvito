@@ -1,4 +1,5 @@
-import { useEffect } from "react";`nimport { createFileRoute, Outlet, useNavigate, Navigate, Link, useLocation } from "@tanstack/react-router";
+﻿import { useEffect } from "react";
+import { createFileRoute, Outlet, useNavigate, Navigate, Link, useLocation } from "@tanstack/react-router";
 import { useAuth } from "../lib/auth-context";
 import { Button } from "../components/ui/button";
 import {
