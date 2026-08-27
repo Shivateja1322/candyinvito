@@ -2,8 +2,13 @@
 
 export default defineConfig({
   tanstackStart: {
-    ssr: false,
     server: { entry: "server" },
   },
-  nitro: false
+  nitro: {
+    rollupConfig: {
+      output: {
+        inlineDynamicImports: true
+      }
+    }
+  }
 });
