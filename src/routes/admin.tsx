@@ -1,4 +1,4 @@
-﻿import { createFileRoute, Outlet, useNavigate, Navigate, Link, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, Navigate, Link, useLocation } from "@tanstack/react-router";
 import { useAuth } from "../lib/auth-context";
 import { Button } from "../components/ui/button";
 import {
@@ -32,7 +32,7 @@ const adminNavigation = [
 ];
 
 function AdminLayout() {
-  const { user, signOut } = useAuth();
+  const { user, isLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -40,6 +40,10 @@ function AdminLayout() {
     await signOut();
     navigate({ to: "/" });
   };
+
+  if (isLoading) {
+    return <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">Loading...</div>;
+  }
 
   if (!user) {
     // Let Tanstack Router or auth context handle redirect natively, or redirect cleanly
