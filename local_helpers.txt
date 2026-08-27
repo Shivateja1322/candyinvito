@@ -1,0 +1,2 @@
+﻿const getLocalInvites = () => JSON.parse(localStorage.getItem('local_invitations') || '{}');
+const setLocalInvites = (invs: any) => localStorage.setItem('local_invitations', JSON.stringify(invs));
