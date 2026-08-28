@@ -194,13 +194,13 @@ export const mockInvitations: Invitation[] = [
     slug: "aarav-meera",
     clientId: "c_1",
     title: "Aarav weds Meera",
-    templateId: "t_3",
-    themeId: "th_1",
+    templateId: "royal-heritage",
+    themeId: "royal-heritage",
     state: "LIVE",
     weddingDate: "2026-11-21",
     venue: "Jagmandir Island Palace",
     city: "Udaipur",
-    coverImage: "amber",
+    coverImage: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&q=80&w=800",
     updatedAt: "2026-08-09T11:20:00Z",
     views: 4820,
     rsvpCount: 214,
@@ -212,13 +212,13 @@ export const mockInvitations: Invitation[] = [
     slug: "sofia-leo",
     clientId: "c_2",
     title: "Sofia & Léo",
-    templateId: "t_4",
-    themeId: "th_3",
+    templateId: "garden-reverie",
+    themeId: "garden-reverie",
     state: "PENDING_REVIEW",
     weddingDate: "2026-09-05",
     venue: "Domaine des Cyprès",
     city: "Provence",
-    coverImage: "olive",
+    coverImage: "https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&q=80&w=800",
     updatedAt: "2026-08-12T08:05:00Z",
     views: 0,
     rsvpCount: 0,
@@ -230,13 +230,13 @@ export const mockInvitations: Invitation[] = [
     slug: "nadia-omar",
     clientId: "c_3",
     title: "Nadia & Omar",
-    templateId: "t_5",
-    themeId: "th_1",
+    templateId: "contemporary-noir",
+    themeId: "contemporary-noir",
     state: "DRAFT",
     weddingDate: "2026-12-12",
     venue: "Bab Al Shams Desert Resort",
     city: "Dubai",
-    coverImage: "midnight",
+    coverImage: "https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&q=80&w=800",
     updatedAt: "2026-08-13T17:44:00Z",
     views: 0,
     rsvpCount: 0,
@@ -248,13 +248,13 @@ export const mockInvitations: Invitation[] = [
     slug: "grace-elliot",
     clientId: "c_4",
     title: "Grace & Elliot",
-    templateId: "t_2",
-    themeId: "th_2",
+    templateId: "editorial-romance",
+    themeId: "editorial-romance",
     state: "EXPIRED",
     weddingDate: "2026-05-30",
     venue: "Barnsley House",
     city: "Cotswolds",
-    coverImage: "ivory",
+    coverImage: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&q=80&w=800",
     updatedAt: "2026-06-04T09:00:00Z",
     views: 2610,
     rsvpCount: 132,
@@ -264,8 +264,12 @@ export const mockInvitations: Invitation[] = [
 ];
 
 export const mockSections: InvitationSection[] = mockInvitations.flatMap((inv) => {
-  const template = mockTemplates.find((t) => t.id === inv.templateId)!;
-  return template.sections.map((kind, index) => ({
+  const template =
+    mockTemplates.find((t) => t.id === inv.templateId) ||
+    mockTemplates.find((t) => t.slug === inv.templateId) ||
+    mockTemplates[0];
+  const sectionList = template?.sections || ["hero", "couple", "events", "rsvp", "footer"];
+  return sectionList.map((kind, index) => ({
     id: `${inv.id}_${kind}`,
     invitationId: inv.id,
     kind,
