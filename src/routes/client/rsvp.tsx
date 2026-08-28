@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../lib/auth-context";
+import { supabase } from "../../lib/supabase";
 import { invitationRepository, rsvpRepository } from "../../lib/repositories";
 import { Download, Search, Users, Mail, MessageSquare, Loader2, CalendarHeart } from "lucide-react";
 import { toast } from "sonner";
@@ -38,20 +39,36 @@ function ClientRsvpComponent() {
     fetchInit();
   }, [user]);
 
+  const fetchRsvps = async () => {
+    if (!selectedInvId) return;
+    try {
+      const data = await rsvpRepository.listByInvitation(selectedInvId);
+      setRsvps(data);
+    } catch (err) {
+      toast.error("Failed to load RSVPs");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchRsvps = async () => {
-      if (!selectedInvId) return;
-      setIsLoading(true);
-      try {
-        const data = await rsvpRepository.listByInvitation(selectedInvId);
-        setRsvps(data);
-      } catch (err) {
-        toast.error("Failed to load RSVPs");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    if (!selectedInvId) return;
+    setIsLoading(true);
     fetchRsvps();
+
+    // Subscribe to real-time RSVP updates
+    const channel = supabase
+      .channel(`client-rsvps-${selectedInvId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "rsvps", filter: `invitation_id=eq.${selectedInvId}` },
+        () => fetchRsvps(),
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [selectedInvId]);
 
   if (isLoading && !invitations.length) {
@@ -85,15 +102,25 @@ function ClientRsvpComponent() {
     );
   }
 
+  const isAttending = (r: any) => r.status === "ATTENDING" || r.attending === "YES" || r.attending === true;
+
   const filteredRsvps = rsvps
-    .filter(r => filter === "ALL" || r.attending === filter)
-    .filter(r => (r.guest_name || r.name || r.guestName).toLowerCase().includes(search.toLowerCase()) || r.email?.toLowerCase().includes(search.toLowerCase()));
+    .filter((r: any) => {
+      if (filter === "ALL") return true;
+      if (filter === "YES") return isAttending(r);
+      if (filter === "NO") return !isAttending(r);
+      return true;
+    })
+    .filter((r: any) =>
+      (r.guest_name || r.name || r.guestName || "").toLowerCase().includes(search.toLowerCase()) ||
+      (r.email || "").toLowerCase().includes(search.toLowerCase()),
+    );
 
   const stats = {
     total: rsvps.length,
-    attending: rsvps.filter(r => r.attending === "YES").length,
-    declined: rsvps.filter(r => r.attending === "NO").length,
-    guests: rsvps.filter(r => r.attending === "YES").reduce((sum, r) => sum + ((r.guests_count || r.guests) || 1), 0)
+    attending: rsvps.filter(isAttending).length,
+    declined: rsvps.filter((r) => !isAttending(r)).length,
+    guests: rsvps.filter(isAttending).reduce((sum, r: any) => sum + ((r.guests_count || r.guests) || 1), 0),
   };
 
   const exportCSV = () => {

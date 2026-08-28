@@ -12,42 +12,63 @@ function AnalyticsPage() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const clientsRes = await supabase.from("users").select("*", { count: "exact", head: true }).eq("role", "CLIENT");
-        const invRes = await supabase.from("invitations").select("*", { count: "exact", head: true });
-        
-        const depRes = await supabase.from("deployment_requests").select("status");
-        const deployments = depRes.data || [];
-        const pending = deployments.filter(d => d.status === "PENDING").length;
-        const approved = deployments.filter(d => d.status === "APPROVED").length;
-        const hosted = deployments.filter(d => d.status === "HOSTED").length;
-        const rejected = deployments.filter(d => d.status === "REJECTED").length;
+  const loadData = async () => {
+    try {
+      const [usersRes, invRes, depRes, rsvpRes] = await Promise.all([
+        supabase.from("users").select("role"),
+        supabase.from("invitations").select("*", { count: "exact", head: true }),
+        supabase.from("deployment_requests").select("status"),
+        supabase.from("rsvps").select("status, attending, guests_count"),
+      ]);
 
-        const rsvpRes = await supabase.from("rsvps").select("attending, guests_count, guests");
-        const rsvps = rsvpRes.data || [];
-        const totalRsvps = rsvps.length;
-        const attendingRsvps = rsvps.filter(r => r.attending === "YES").length;
-        
-        setStats({
-          clients: clientsRes.count || 0,
-          invitations: invRes.count || 0,
-          deployments: deployments.length,
-          pending,
-          approved,
-          hosted,
-          rejected,
-          totalRsvps,
-          attendingRsvps
-        });
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
+      const users = usersRes.data || [];
+      const clientsCount = users.filter((u) => u.role?.toUpperCase() === "CLIENT").length;
+      
+      const deployments = depRes.data || [];
+      const pending = deployments.filter((d) => d.status === "PENDING").length;
+      const approved = deployments.filter((d) => d.status === "APPROVED").length;
+      const hosted = deployments.filter((d) => d.status === "HOSTED").length;
+      const rejected = deployments.filter((d) => d.status === "REJECTED").length;
+
+      const rsvps = rsvpRes.data || [];
+      const totalRsvps = rsvps.length;
+      const attendingRsvps = rsvps.filter(
+        (r) => r.status === "ATTENDING" || r.attending === "YES" || r.attending === true,
+      ).length;
+
+      setStats({
+        clients: clientsCount,
+        invitations: invRes.count || 0,
+        deployments: deployments.length,
+        pending,
+        approved,
+        hosted,
+        rejected,
+        totalRsvps,
+        attendingRsvps,
+      });
+    } catch (e) {
+      console.error("Analytics loadData error:", e);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     loadData();
+
+    // Enable real-time updates via Supabase Broadcast / Postgres Changes
+    const channel = supabase
+      .channel("admin-analytics-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "rsvps" }, () => loadData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "deployment_requests" }, () => loadData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "users" }, () => loadData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "invitations" }, () => loadData())
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   if (loading) return <div className="p-10 flex items-center justify-center"><Loader2 className="animate-spin text-black/50" /></div>;

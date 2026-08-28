@@ -26,6 +26,7 @@ import { Route as AdminInvitationsRouteImport } from './routes/admin/invitations
 import { Route as AdminRsvpsRouteImport } from './routes/admin/rsvps'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as ClientIndexRouteImport } from './routes/client/index'
+import { Route as ClientDeploymentsRouteImport } from './routes/client/deployments'
 import { Route as ClientRsvpRouteImport } from './routes/client/rsvp'
 import { Route as ClientTemplatesRouteImport } from './routes/client/templates'
 import { Route as ISlugRouteImport } from './routes/i.$slug'
@@ -117,6 +118,11 @@ const ClientIndexRoute = ClientIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ClientRoute,
 } as any)
+const ClientDeploymentsRoute = ClientDeploymentsRouteImport.update({
+  id: '/deployments',
+  path: '/deployments',
+  getParentRoute: () => ClientRoute,
+} as any)
 const ClientRsvpRoute = ClientRsvpRouteImport.update({
   id: '/rsvp',
   path: '/rsvp',
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/admin/invitations': typeof AdminInvitationsRoute
   '/admin/rsvps': typeof AdminRsvpsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/client/deployments': typeof ClientDeploymentsRoute
   '/client/rsvp': typeof ClientRsvpRoute
   '/client/templates': typeof ClientTemplatesRoute
   '/i/$slug': typeof ISlugRoute
@@ -181,6 +188,7 @@ export interface FileRoutesByTo {
   '/admin/invitations': typeof AdminInvitationsRoute
   '/admin/rsvps': typeof AdminRsvpsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/client/deployments': typeof ClientDeploymentsRoute
   '/client/rsvp': typeof ClientRsvpRoute
   '/client/templates': typeof ClientTemplatesRoute
   '/i/$slug': typeof ISlugRoute
@@ -206,6 +214,7 @@ export interface FileRoutesById {
   '/admin/invitations': typeof AdminInvitationsRoute
   '/admin/rsvps': typeof AdminRsvpsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/client/deployments': typeof ClientDeploymentsRoute
   '/client/rsvp': typeof ClientRsvpRoute
   '/client/templates': typeof ClientTemplatesRoute
   '/i/$slug': typeof ISlugRoute
@@ -232,6 +241,7 @@ export interface FileRouteTypes {
     | '/admin/invitations'
     | '/admin/rsvps'
     | '/admin/users'
+    | '/client/deployments'
     | '/client/rsvp'
     | '/client/templates'
     | '/i/$slug'
@@ -254,6 +264,7 @@ export interface FileRouteTypes {
     | '/admin/invitations'
     | '/admin/rsvps'
     | '/admin/users'
+    | '/client/deployments'
     | '/client/rsvp'
     | '/client/templates'
     | '/i/$slug'
@@ -278,6 +289,7 @@ export interface FileRouteTypes {
     | '/admin/invitations'
     | '/admin/rsvps'
     | '/admin/users'
+    | '/client/deployments'
     | '/client/rsvp'
     | '/client/templates'
     | '/i/$slug'
@@ -422,6 +434,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClientIndexRouteImport
       parentRoute: typeof ClientRoute
     }
+    '/client/deployments': {
+      id: '/client/deployments'
+      path: '/deployments'
+      fullPath: '/client/deployments'
+      preLoaderRoute: typeof ClientDeploymentsRouteImport
+      parentRoute: typeof ClientRoute
+    }
     '/client/rsvp': {
       id: '/client/rsvp'
       path: '/rsvp'
@@ -481,6 +500,7 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface ClientRouteChildren {
+  ClientDeploymentsRoute: typeof ClientDeploymentsRoute
   ClientRsvpRoute: typeof ClientRsvpRoute
   ClientTemplatesRoute: typeof ClientTemplatesRoute
   ClientIndexRoute: typeof ClientIndexRoute
@@ -488,6 +508,7 @@ interface ClientRouteChildren {
 }
 
 const ClientRouteChildren: ClientRouteChildren = {
+  ClientDeploymentsRoute: ClientDeploymentsRoute,
   ClientRsvpRoute: ClientRsvpRoute,
   ClientTemplatesRoute: ClientTemplatesRoute,
   ClientIndexRoute: ClientIndexRoute,

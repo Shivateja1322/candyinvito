@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
+import { supabase } from "../../lib/supabase";
 import { rsvpRepository } from "../../lib/repositories";
 import { toast } from "sonner";
 import { Loader2, Download, Filter, FileText } from "lucide-react";
@@ -12,13 +13,8 @@ function RsvpsPage() {
   const [rsvps, setRsvps] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchRsvps();
-  }, []);
-
   const fetchRsvps = async () => {
     try {
-      setLoading(true);
       const data = await rsvpRepository.list();
       setRsvps(data);
     } catch (err: any) {
@@ -28,8 +24,21 @@ function RsvpsPage() {
     }
   };
 
+  useEffect(() => {
+    fetchRsvps();
+
+    const channel = supabase
+      .channel("admin-rsvps-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "rsvps" }, () => fetchRsvps())
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const handleExport = () => {
-    if (filteredRsvps.length === 0) return;
+    if (rsvps.length === 0) return;
     const headers = ["Date", "Invitation", "Guest Name", "Status", "Guests Count", "Message"];
     const csvRows = [headers.join(",")];
     for (const r of rsvps) {
@@ -69,7 +78,7 @@ function RsvpsPage() {
           <div className="p-12 flex justify-center items-center">
             <Loader2 className="h-8 w-8 animate-spin text-[#201814]/20" />
           </div>
-        ) : filteredRsvps.length === 0 ? (
+        ) : rsvps.length === 0 ? (
           <div className="p-12 text-center">
             <div className="h-12 w-12 rounded-full bg-[#201814]/5 flex items-center justify-center mx-auto mb-4">
               <FileText className="h-6 w-6 text-[#201814]/40" />

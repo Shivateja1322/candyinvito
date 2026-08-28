@@ -12,6 +12,7 @@ import {
   Settings,
   LogOut,
   Sparkles,
+  Globe,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 
@@ -23,6 +24,7 @@ const clientNavigation = [
   { name: "Dashboard", href: "/client", icon: LayoutDashboard },
   { name: "Templates", href: "/client/templates", icon: FileText },
   { name: "RSVP", href: "/client/rsvp", icon: Users },
+  { name: "Deployments", href: "/client/deployments", icon: Globe },
 ];
 
 function ClientLayout() {

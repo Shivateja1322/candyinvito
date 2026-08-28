@@ -335,41 +335,74 @@ export const deploymentRepository = {
 };
 
 export const deploymentRequestRepository = {
-  list: async () => {
-    const { data, error } = await supabase.from("deployment_requests").select("*").order("created_at", { ascending: false });
+  list: async (userId?: string) => {
+    let query = supabase.from("deployment_requests").select("*").order("created_at", { ascending: false });
+    if (userId) {
+      query = query.eq("requested_by", userId);
+    }
+    const { data, error } = await query;
     if (error) {
-        console.error("deployment_requests error", error);
-        return [];
+      console.error("deployment_requests error", error);
+      return [];
     }
     return data as DeploymentRequest[];
   },
+  create: async (data: Partial<DeploymentRequest>) => {
+    const { data: created, error } = await supabase
+      .from("deployment_requests")
+      .insert(data)
+      .select()
+      .single();
+    if (error) throw error;
+    return created as DeploymentRequest;
+  },
   request: async (invitationId: string, userId: string) => {
-    // Check for existing pending request to prevent duplicates
-    const { data: existing, error: fetchErr } = await supabase.from("deployment_requests")
+    const { data: existing } = await supabase
+      .from("deployment_requests")
       .select("*")
       .eq("invitation_id", invitationId)
       .eq("status", "PENDING")
       .maybeSingle();
-      
+
     if (existing) {
       throw new Error("A deployment request is already pending for this invitation.");
     }
-    
-    const { data, error } = await supabase.from("deployment_requests").insert({
-      invitation_id: invitationId,
-      requested_by: userId,
-      status: "PENDING"
-    }).select().single();
+
+    const { data, error } = await supabase
+      .from("deployment_requests")
+      .insert({
+        invitation_id: invitationId,
+        requested_by: userId,
+        status: "PENDING",
+      })
+      .select()
+      .single();
     if (error) throw error;
     return data as DeploymentRequest;
   },
-  updateStatus: async (requestId: string, status: "APPROVED" | "REJECTED" | "HOSTED", reviewedBy: string, rejectionReason?: string, additionalData?: any) => {
-    const patch = { status, reviewed_by: reviewedBy, reviewed_at: new Date().toISOString() };
-    if (rejectionReason) (patch as any).rejection_reason = rejectionReason;
-    const { data, error } = await supabase.from("deployment_requests").update(patch).eq("id", requestId).select().single();
+  updateStatus: async (
+    requestId: string,
+    status: "APPROVED" | "REJECTED" | "HOSTED",
+    reviewedBy: string,
+    rejectionReason?: string,
+    additionalData?: any,
+  ) => {
+    const patch: any = {
+      status,
+      reviewed_by: reviewedBy,
+      reviewed_at: new Date().toISOString(),
+      ...(additionalData || {}),
+    };
+    if (rejectionReason) patch.rejection_reason = rejectionReason;
+    const { data, error } = await supabase
+      .from("deployment_requests")
+      .update(patch)
+      .eq("id", requestId)
+      .select()
+      .single();
     if (error) throw error;
     return data as DeploymentRequest;
-  }
+  },
 };
 
 export const analyticsRepository = {

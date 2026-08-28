@@ -23,13 +23,14 @@ const serverCreateUser = createServerFn({ method: "POST" })
     const { data, error } = await adminSupabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          role,
+          name,
+        },
+      },
     });
     if (error) return { error: error.message };
-    
-    // Attempt to update the user profile row since the trigger might not set name/role correctly
-    if (data.user) {
-       await adminSupabase.from("users").update({ role, name }).eq("id", data.user.id);
-    }
     return { success: true, user: data.user };
   });
 
@@ -112,18 +113,36 @@ function UserManagement() {
       try {
         const url = import.meta.env.VITE_SUPABASE_URL;
         const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
-        const result = await serverCreateUser({ data: { email: newUserEmail, password: newUserPassword, role: newUserRole, name: newUserName, supabaseUrl: url, supabaseKey: key } });
+        const result = await serverCreateUser({
+          data: {
+            email: newUserEmail,
+            password: newUserPassword,
+            role: newUserRole,
+            name: newUserName,
+            supabaseUrl: url,
+            supabaseKey: key,
+          },
+        });
         if (result.error) throw new Error(result.error);
 
+        // Explicitly ensure public.users role is set
+        if (result.user?.id) {
+          try {
+            await supabase
+              .from("users")
+              .update({ role: newUserRole, name: newUserName || (newUserRole === "ADMIN" ? "Platform Admin" : "CandyInvito Client") })
+              .eq("id", result.user.id);
+          } catch {}
+        }
 
-      toast.success(`User ${newUserEmail} created successfully.`);
-      setNewUserEmail("");
-      setNewUserPassword("");
-      setNewUserName("");
-      setNewUserRole("CLIENT");
+        toast.success(`User ${newUserEmail} created as ${newUserRole} successfully.`);
+        setNewUserEmail("");
+        setNewUserPassword("");
+        setNewUserName("");
+        setNewUserRole("CLIENT");
 
-      setTimeout(() => fetchUsers(), 1000);
-    } catch (error: any) {
+        setTimeout(() => fetchUsers(), 1000);
+      } catch (error: any) {
       toast.error(error.message || "Failed to create user.");
     } finally {
       setIsCreating(false);
