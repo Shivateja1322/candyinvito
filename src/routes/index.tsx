@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import heroImage from "@/assets/hero-wedding.jpg";
 import { SplashIntro } from "@/components/SplashIntro";
+import { mockTemplates } from "@/lib/mock";
+import { ArrowRight, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -65,101 +67,172 @@ function Home() {
   return (
     <SplashIntro>
       <SiteLayout>
-      {/* Hero */}
-      <section className="relative -mt-20 overflow-hidden">
-        <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 pt-32 pb-20 md:grid-cols-[1.05fr_0.95fr] md:pt-40 md:pb-28">
-          <div>
-            <p className="eyebrow reveal">Digital wedding invitations</p>
-            <h1 className="reveal mt-6 text-5xl leading-[0.98] md:text-7xl">
-              The invitation is
-              <br />
-              the first moment
-              <br />
-              <em className="text-primary not-italic">of your wedding.</em>
-            </h1>
-            <p className="reveal-slow mt-7 max-w-md text-base leading-relaxed text-muted-foreground">
-              CandyInvito turns your details into a cinematic page your guests will actually enjoy
-              opening — with RSVP, livestream and quiet analytics behind it.
-            </p>
-            <div className="reveal-slow mt-10 flex flex-wrap items-center gap-4">
-              <Link
-                to="/templates"
-                className="bg-ink px-7 py-3.5 text-xs tracking-[0.22em] text-ink-foreground uppercase transition-opacity hover:opacity-90"
-              >
-                View the atelier
-              </Link>
-              <Link
-                to="/how-it-works"
-                className="border-b border-gold pb-1 text-xs tracking-[0.22em] uppercase transition-colors hover:text-primary"
-              >
-                How it works
-              </Link>
+        {/* Hero */}
+        <section className="relative -mt-20 overflow-hidden">
+          <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 pt-32 pb-20 md:grid-cols-[1.05fr_0.95fr] md:pt-40 md:pb-28">
+            <div>
+              <p className="eyebrow reveal">Digital wedding invitations</p>
+              <h1 className="reveal mt-6 text-5xl leading-[0.98] md:text-7xl font-serif">
+                The invitation is
+                <br />
+                the first moment
+                <br />
+                <em className="text-primary not-italic">of your wedding.</em>
+              </h1>
+              <p className="reveal-slow mt-7 max-w-md text-base leading-relaxed text-muted-foreground">
+                CandyInvito turns your details into a cinematic page your guests will actually enjoy
+                opening — with RSVP, livestream and quiet analytics behind it.
+              </p>
+              <div className="reveal-slow mt-10 flex flex-wrap items-center gap-4">
+                <Link
+                  to="/templates"
+                  className="bg-ink px-7 py-3.5 text-xs tracking-[0.22em] text-ink-foreground uppercase transition-opacity hover:opacity-90 rounded-none shadow-sm"
+                >
+                  View the atelier
+                </Link>
+                <Link
+                  to="/how-it-works"
+                  className="border-b border-gold pb-1 text-xs tracking-[0.22em] uppercase transition-colors hover:text-primary"
+                >
+                  How it works
+                </Link>
+              </div>
             </div>
+
+            <figure className="reveal-slow relative">
+              <img
+                src={heroImage}
+                alt="A couple exchanging rings in candlelight, surrounded by deep red florals"
+                width={1408}
+                height={1760}
+                className="aspect-[4/5] w-full object-cover shadow-lift rounded-2xl"
+              />
+              <figcaption className="veil pointer-events-none absolute inset-x-0 bottom-0 p-6 rounded-b-2xl">
+                <span className="font-display text-2xl text-ink-foreground">Aarav & Meera</span>
+                <span className="mt-1 block text-[0.7rem] tracking-[0.24em] text-ink-foreground/80 uppercase">
+                  Udaipur · November 2026
+                </span>
+              </figcaption>
+            </figure>
+          </div>
+        </section>
+
+        {/* Craft */}
+        <section className="border-y border-border">
+          <div className="mx-auto grid max-w-6xl gap-px bg-border md:grid-cols-3">
+            {CRAFT.map((item) => (
+              <article key={item.title} className="bg-background p-10">
+                <h2 className="rule-gold font-display text-2xl">{item.title}</h2>
+                <p className="mt-5 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        {/* Featured Atelier Designs */}
+        <section className="mx-auto max-w-6xl px-6 py-24 md:py-32">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+            <div>
+              <p className="eyebrow">The Atelier Collection</p>
+              <h2 className="mt-4 text-3xl md:text-5xl font-display">
+                Bespoke designs crafted for your celebration.
+              </h2>
+            </div>
+            <Link
+              to="/templates"
+              className="inline-flex items-center gap-2 text-xs tracking-[0.2em] uppercase font-bold text-primary hover:underline"
+            >
+              View all 5 designs <ArrowRight size={14} />
+            </Link>
           </div>
 
-          <figure className="reveal-slow relative">
-            <img
-              src={heroImage}
-              alt="A couple exchanging rings in candlelight, surrounded by deep red florals"
-              width={1408}
-              height={1760}
-              className="aspect-[4/5] w-full object-cover shadow-lift"
-            />
-            <figcaption className="veil pointer-events-none absolute inset-x-0 bottom-0 p-6">
-              <span className="font-display text-2xl text-ink-foreground">Aarav & Meera</span>
-              <span className="mt-1 block text-[0.7rem] tracking-[0.24em] text-ink-foreground/80 uppercase">
-                Udaipur · November 2026
-              </span>
-            </figcaption>
-          </figure>
-        </div>
-      </section>
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {mockTemplates.map((template) => (
+              <div
+                key={template.id}
+                className="group flex flex-col justify-between bg-white border border-[#201814]/10 rounded-2xl overflow-hidden shadow-xs hover:shadow-xl transition-all duration-500"
+              >
+                <Link
+                  to="/templates/$slug"
+                  params={{ slug: template.slug }}
+                  className="relative aspect-[4/5] overflow-hidden block bg-[#1C1C1E]"
+                >
+                  <img
+                    src={template.previewImage}
+                    alt={template.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-6">
+                    <span className="text-[9px] tracking-[0.25em] uppercase text-[#DCA963] font-bold mb-1">
+                      {template.style} Collection
+                    </span>
+                    <h3 className="font-serif text-2xl font-bold text-white leading-tight">
+                      {template.name}
+                    </h3>
+                  </div>
+                  {template.isPremium && (
+                    <span className="absolute top-4 right-4 bg-[#DCA963] text-[#201814] px-2.5 py-1 text-[9px] font-bold tracking-[0.2em] uppercase rounded-full shadow-sm">
+                      Premium
+                    </span>
+                  )}
+                </Link>
 
-      {/* Craft */}
-      <section className="border-y border-border">
-        <div className="mx-auto grid max-w-6xl gap-px bg-border md:grid-cols-3">
-          {CRAFT.map((item) => (
-            <article key={item.title} className="bg-background p-10">
-              <h2 className="rule-gold font-display text-2xl">{item.title}</h2>
-              <p className="mt-5 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
-            </article>
-          ))}
-        </div>
-      </section>
+                <div className="p-6 flex flex-col justify-between flex-1">
+                  <p className="text-sm leading-relaxed text-muted-foreground">{template.tagline}</p>
+                  <div className="mt-6 flex items-center justify-between pt-4 border-t border-black/5">
+                    <Link
+                      to="/templates/$slug"
+                      params={{ slug: template.slug }}
+                      className="text-xs text-[#201814]/70 hover:text-[#201814] font-bold uppercase tracking-wider transition-colors"
+                    >
+                      Details
+                    </Link>
+                    <Link
+                      to="/client/templates"
+                      className="inline-flex items-center gap-1.5 bg-[#201814] hover:bg-[#DCA963] text-white hover:text-[#201814] text-xs font-bold uppercase tracking-wider px-3.5 py-2 rounded-xl transition-all shadow-xs"
+                    >
+                      Customize <ArrowRight size={13} />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
 
-      {/* Process */}
-      <section className="mx-auto max-w-6xl px-6 py-24 md:py-32">
-        <p className="eyebrow">The process</p>
-        <h2 className="mt-5 max-w-2xl text-3xl md:text-5xl">
-          Four unhurried steps between “we’re engaged” and “please join us”.
-        </h2>
-        <ol className="mt-14 grid gap-10 md:grid-cols-4">
-          {STEPS.map((s) => (
-            <li key={s.n}>
-              <span className="font-display text-4xl text-gold">{s.n}</span>
-              <h3 className="mt-4 text-lg">{s.t}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{s.d}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      {/* Closing */}
-      <section className="bg-ink">
-        <div className="mx-auto max-w-6xl px-6 py-24 text-center md:py-32">
-          <p className="eyebrow text-ink-foreground/60">Invitations by CandyInvito</p>
-          <h2 className="mx-auto mt-6 max-w-2xl text-4xl text-ink-foreground md:text-6xl">
-            Let your guests feel the wedding before they arrive.
+        {/* Process */}
+        <section className="mx-auto max-w-6xl px-6 py-24 md:py-32 border-t border-border">
+          <p className="eyebrow">The process</p>
+          <h2 className="mt-5 max-w-2xl text-3xl md:text-5xl font-display">
+            Four unhurried steps between “we’re engaged” and “please join us”.
           </h2>
-          <Link
-            to="/login"
-            className="mt-10 inline-block border border-gold px-8 py-3.5 text-xs tracking-[0.22em] text-ink-foreground uppercase transition-colors hover:bg-gold hover:text-gold-foreground"
-          >
-            Begin your invitation
-          </Link>
-        </div>
-      </section>
-    </SiteLayout>
+          <ol className="mt-14 grid gap-10 md:grid-cols-4">
+            {STEPS.map((s) => (
+              <li key={s.n}>
+                <span className="font-display text-4xl text-gold">{s.n}</span>
+                <h3 className="mt-4 text-lg font-serif">{s.t}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{s.d}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        {/* Closing */}
+        <section className="bg-ink">
+          <div className="mx-auto max-w-6xl px-6 py-24 text-center md:py-32">
+            <p className="eyebrow text-ink-foreground/60">Invitations by CandyInvito</p>
+            <h2 className="mx-auto mt-6 max-w-2xl text-4xl text-ink-foreground md:text-6xl font-serif">
+              Let your guests feel the wedding before they arrive.
+            </h2>
+            <Link
+              to="/login"
+              className="mt-10 inline-block border border-gold px-8 py-3.5 text-xs tracking-[0.22em] text-ink-foreground uppercase transition-colors hover:bg-gold hover:text-gold-foreground rounded-none shadow-sm"
+            >
+              Begin your invitation
+            </Link>
+          </div>
+        </section>
+      </SiteLayout>
     </SplashIntro>
   );
 }

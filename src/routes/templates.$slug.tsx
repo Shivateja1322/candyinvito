@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { SiteLayout } from "../components/site/SiteLayout";
 import { templateRepository } from "../lib/repositories";
 import { Skeleton } from "../components/ui/skeleton";
+import { Sparkles, Check, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/templates/$slug")({
   component: TemplateDetail,
@@ -26,7 +27,7 @@ function TemplateDetail() {
         <div className="mx-auto max-w-4xl px-6 py-20 text-center">
           <Skeleton className="mx-auto h-8 w-1/3" />
           <Skeleton className="mx-auto mt-4 h-4 w-1/2" />
-          <Skeleton className="mx-auto mt-12 aspect-video w-full" />
+          <Skeleton className="mx-auto mt-12 aspect-video w-full rounded-2xl" />
         </div>
       </SiteLayout>
     );
@@ -53,54 +54,77 @@ function TemplateDetail() {
     <SiteLayout>
       <div className="mx-auto max-w-5xl px-6 py-20">
         <header className="text-center">
-          <span className="eyebrow block text-gold">{template.style}</span>
-          <h1 className="mt-4 font-display text-5xl tracking-tight sm:text-6xl">{template.name}</h1>
-          <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground">{template.tagline}</p>
+          <span className="text-[10px] uppercase font-bold tracking-[0.25em] text-[#DCA963] block">
+            {template.style} Collection
+          </span>
+          <h1 className="mt-4 font-display text-5xl tracking-tight sm:text-6xl text-[#201814]">
+            {template.name}
+          </h1>
+          <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground">
+            {template.tagline}
+          </p>
         </header>
 
-        <div className="mt-16 overflow-hidden bg-secondary shadow-sm">
-          <div className="aspect-[16/9] w-full flex items-center justify-center border border-border">
-            <span aria-hidden className="text-gold opacity-50 scale-150">
-              ✦
-            </span>
-            <p className="absolute text-sm tracking-[0.2em] uppercase text-muted-foreground">
-              Preview Artwork
-            </p>
+        {/* High-Resolution Preview Image */}
+        <div className="mt-16 overflow-hidden rounded-3xl shadow-xl border border-black/10 relative bg-[#1C1C1E] aspect-[16/9] max-h-[520px]">
+          {template.previewImage ? (
+            <img
+              src={template.previewImage}
+              alt={template.name}
+              className="w-full h-full object-cover"
+            />
+          ) : null}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-8">
+            <div>
+              <span className="text-xs uppercase tracking-widest text-[#DCA963] font-bold">
+                CandyInvito Bespoke Theme
+              </span>
+              <h2 className="text-2xl font-serif font-bold text-white mt-1">
+                {template.name}
+              </h2>
+            </div>
           </div>
         </div>
 
         <div className="mt-20 grid gap-16 md:grid-cols-2 md:items-start">
           <div className="space-y-6">
-            <h2 className="font-display text-3xl">Design Elements</h2>
+            <h2 className="font-display text-3xl text-[#201814]">Design Architecture</h2>
             <p className="text-muted-foreground leading-relaxed">
-              Every detail is meticulously crafted. The <strong>{template.name}</strong> collection
-              provides a robust foundation for your digital invitation, featuring elegant typography
-              and smooth transitions.
+              Every detail is meticulously crafted. The <strong>{template.name}</strong> theme
+              provides a robust foundation for your digital invitation, featuring elegant typography,
+              background ambient music, interactive RSVP, and smooth transitions.
             </p>
+
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold tracking-wide uppercase">Included Sections</h3>
-              <ul className="grid grid-cols-2 gap-3 text-sm text-muted-foreground">
+              <h3 className="text-xs font-bold tracking-widest uppercase text-[#201814]/60">
+                Interactive Sections
+              </h3>
+              <ul className="grid grid-cols-2 gap-3 text-sm text-[#201814]">
                 {template.sections.map((section) => (
                   <li key={section} className="flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-gold/50" />
-                    <span className="capitalize">{section}</span>
+                    <Check className="h-4 w-4 text-[#DCA963]" />
+                    <span className="capitalize">{section} Section</span>
                   </li>
                 ))}
               </ul>
             </div>
           </div>
 
-          <div className="bg-card border border-border p-8 text-center space-y-6">
-            <h3 className="font-display text-2xl">Start with this design</h3>
+          <div className="bg-white border border-[#201814]/10 rounded-2xl p-8 text-center space-y-6 shadow-sm">
+            <div className="h-12 w-12 rounded-full bg-[#DCA963]/15 text-[#DCA963] flex items-center justify-center mx-auto">
+              <Sparkles size={24} />
+            </div>
+            <h3 className="font-serif text-2xl font-bold text-[#201814]">
+              Start with {template.name}
+            </h3>
             <p className="text-sm text-muted-foreground">
-              Contact our studio to reserve your timeline and request a private preview of this
-              design customized for your wedding.
+              Customize photos, couple names, venue map, background audio & video, and live countdown directly in our visual editor.
             </p>
             <Link
-              to="/contact"
-              className="inline-block w-full bg-ink px-8 py-3.5 text-xs tracking-[0.2em] text-ink-foreground uppercase transition-opacity hover:opacity-90"
+              to="/client/templates"
+              className="inline-flex items-center justify-center gap-2 w-full bg-[#201814] hover:bg-[#DCA963] text-white hover:text-[#201814] px-8 py-3.5 text-xs font-bold tracking-[0.2em] uppercase rounded-xl transition-all shadow-sm"
             >
-              Request Preview
+              Customize in Studio <ArrowRight size={14} />
             </Link>
           </div>
         </div>
