@@ -1,15 +1,16 @@
 import { useEffect } from "react";
-import { createFileRoute, Outlet, useNavigate, Navigate, Link, useLocation } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Outlet,
+  useNavigate,
+  Link,
+  useLocation,
+} from "@tanstack/react-router";
 import { useAuth } from "../lib/auth-context";
 import {
   LayoutDashboard,
-  Mail,
   FileText,
-  Palette,
-  Eye,
   Users,
-  BarChart,
-  Settings,
   LogOut,
   Sparkles,
   Globe,
@@ -44,16 +45,22 @@ function ClientLayout() {
   }, [user, isLoading, navigate]);
 
   if (isLoading || !user) {
-    return <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">Loading...</div>;
-  }
-  if (user.role !== "CLIENT") {
     return (
-      <div className="min-h-screen bg-[#FDFBF7] flex flex-col items-center justify-center space-y-4">
-        <p className="font-display text-xl text-[#201814]">
+      <div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center font-sans">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#DCA963]"></div>
+      </div>
+    );
+  }
+
+  // Allow both CLIENT and ADMIN to view client area
+  if (user.role !== "CLIENT" && user.role !== "ADMIN") {
+    return (
+      <div className="min-h-screen bg-[#FAF9F6] flex flex-col items-center justify-center space-y-4 font-sans">
+        <p className="font-serif text-xl text-[#201814]">
           Access Denied. You are logged in, but not authorized for this area.
         </p>
         <Button
-          className="bg-[#201814] text-[#FDFBF7] hover:bg-[#342820]"
+          className="bg-[#201814] text-[#FAF9F6] hover:bg-[#342820]"
           onClick={() => navigate({ to: "/" })}
         >
           Go Home
@@ -70,21 +77,22 @@ function ClientLayout() {
   }
 
   return (
-    <div className="flex h-screen w-full bg-[#FDFBF7] overflow-hidden text-[#201814]">
+    <div className="flex h-screen w-full bg-[#FAF9F6] overflow-hidden text-[#201814] font-sans">
       {/* Sidebar - Client Portal */}
-      <aside className="w-64 flex flex-col bg-[#FDFBF7] shrink-0 h-full border-r border-[#201814]/10">
+      <aside className="w-64 flex flex-col bg-[#FAF9F6] shrink-0 h-full border-r border-[#201814]/10">
         <div className="p-8 pb-6">
-          <h1 className="font-display text-2xl font-medium tracking-wide text-[#201814]">
-            CandyInvito
-          </h1>
-          <p className="text-[10px] tracking-widest uppercase text-[#201814]/50 mt-1 font-semibold">
-            Client Portal
-          </p>
+          <Link to="/client" className="block">
+            <h1 className="font-serif text-2xl font-medium tracking-wide text-[#201814]">
+              CandyInvito
+            </h1>
+            <p className="text-[10px] tracking-widest uppercase text-[#201814]/50 mt-1 font-semibold">
+              Client Portal
+            </p>
+          </Link>
         </div>
 
-        <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto">
           {clientNavigation.map((item) => {
-            // Precise exact match for dashboard, includes for others
             const isActive =
               item.href === "/client"
                 ? location.pathname === "/client" || location.pathname === "/client/"
@@ -94,9 +102,9 @@ function ClientLayout() {
               <Link
                 key={item.name}
                 to={item.href}
-                className={`flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                className={`flex items-center px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
                   isActive
-                    ? "bg-[#201814] text-white shadow-md"
+                    ? "bg-[#201814] text-white shadow-sm"
                     : "text-[#201814]/60 hover:text-[#201814] hover:bg-[#201814]/5"
                 }`}
               >
@@ -104,7 +112,7 @@ function ClientLayout() {
                 <span>{item.name}</span>
                 {isActive && (
                   <div className="ml-auto">
-                    <Sparkles className="h-3 w-3 text-amber-400" />
+                    <Sparkles className="h-3 w-3 text-[#DCA963]" />
                   </div>
                 )}
               </Link>
@@ -113,21 +121,23 @@ function ClientLayout() {
         </nav>
 
         <div className="p-4 border-t border-[#201814]/10">
-          <div className="flex items-center justify-between px-2 pt-2 cursor-pointer hover:opacity-80 transition-opacity">
+          <div className="flex items-center justify-between px-2 pt-2">
             <div className="flex items-center">
-              <div className="h-8 w-8 rounded-full bg-amber-900/10 text-amber-900 flex items-center justify-center text-xs font-bold mr-3">
-                {user.avatarInitials}
+              <div className="h-8 w-8 rounded-full bg-[#201814]/5 text-[#201814] flex items-center justify-center text-xs font-bold mr-3 border border-black/5">
+                {user.avatarInitials || user.name?.substring(0, 2).toUpperCase()}
               </div>
               <div className="flex flex-col">
-                <span className="text-sm font-semibold text-[#201814]">{user.name}</span>
+                <span className="text-xs font-semibold text-[#201814] truncate max-w-[110px]">
+                  {user.name}
+                </span>
                 <span className="text-[9px] text-[#201814]/40 uppercase tracking-widest font-bold">
-                  Premium Plan
+                  {user.role}
                 </span>
               </div>
             </div>
             <button
               onClick={handleSignOut}
-              className="text-[#201814]/40 hover:text-red-500 transition-colors"
+              className="text-[#201814]/40 hover:text-rose-600 transition-colors p-1.5 rounded-lg hover:bg-rose-50"
               title="Sign Out"
             >
               <LogOut className="h-4 w-4" />
@@ -137,7 +147,7 @@ function ClientLayout() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-auto bg-[#F5F3ED] flex flex-col relative">
+      <main className="flex-1 overflow-auto bg-[#FAF9F6] flex flex-col relative">
         <Outlet />
       </main>
     </div>

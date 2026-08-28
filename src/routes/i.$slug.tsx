@@ -5,7 +5,17 @@ import { createClient } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth-context";
 import { deploymentRequestRepository, invitationRepository } from "../lib/repositories";
-import { Loader2, ArrowLeft, UploadCloud, CheckCircle2, Globe, Clock } from "lucide-react";
+import {
+  Loader2,
+  ArrowLeft,
+  UploadCloud,
+  CheckCircle2,
+  Globe,
+  Clock,
+  Settings,
+  Sparkles,
+  ExternalLink,
+} from "lucide-react";
 import { toast } from "sonner";
 import { TemplateRenderer } from "../templates/TemplateRegistry";
 
@@ -13,7 +23,17 @@ const serverGetPublicInvitation = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async (ctx) => {
     const { slug, supabaseUrl, supabaseKey } = ctx.data || (ctx as any);
-    const client = createClient(supabaseUrl, supabaseKey);
+    const url = process.env.VITE_SUPABASE_URL || supabaseUrl;
+    const key =
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      process.env.VITE_SUPABASE_ANON_KEY ||
+      supabaseKey;
+
+    if (!url || !key) {
+      return { invitation: null, error: "Missing Supabase configuration" };
+    }
+
+    const client = createClient(url, key);
 
     const { data: inv, error: invErr } = await client
       .from("invitations")
@@ -44,23 +64,23 @@ export const Route = createFileRoute("/i/$slug")({
   component: InvitationRenderer,
   errorComponent: ({ error }: { error: any }) => {
     return (
-      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center font-display space-y-6 p-8">
-        <div className="text-center w-full max-w-2xl">
-          <h1 className="text-xl mb-2 text-red-400/80">Template Error</h1>
-          <p className="text-white/40 tracking-widest uppercase text-[10px]">
+      <div className="min-h-screen bg-[#201814] text-white flex flex-col items-center justify-center font-sans space-y-6 p-8">
+        <div className="text-center w-full max-w-xl bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-md">
+          <Globe className="w-12 h-12 text-[#DCA963] mx-auto mb-4" />
+          <h1 className="text-2xl font-serif mb-2">Invitation Viewer</h1>
+          <p className="text-white/60 text-xs uppercase tracking-widest mb-6">
             Failed to render this template
           </p>
-          <div className="mt-8 bg-white/5 p-4 rounded text-left overflow-auto border border-red-500/30 text-red-300 font-mono text-xs max-h-64 break-words">
+          <div className="bg-black/40 p-4 rounded-xl text-left overflow-auto border border-white/10 text-rose-300 font-mono text-xs max-h-48 break-words mb-6">
             <p className="font-bold">{error?.message || "Unknown error"}</p>
-            <pre className="mt-2 whitespace-pre-wrap">{error?.stack}</pre>
           </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-[#DCA963] text-[#201814] font-bold px-6 py-2.5 rounded-full text-xs uppercase tracking-widest hover:bg-[#C99750] transition-colors"
+          >
+            Reload Invitation
+          </button>
         </div>
-        <button
-          onClick={() => window.location.reload()}
-          className="border border-white/20 px-6 py-2 uppercase tracking-widest text-xs hover:bg-white/10 transition-colors rounded-full"
-        >
-          Reload Frame
-        </button>
       </div>
     );
   },
@@ -209,13 +229,17 @@ function InvitationRenderer() {
     );
   }
 
+  const isOwnerOrAdmin =
+    user?.role === "ADMIN" || (user && invitation && user.id === invitation.client_id);
+
   const isPublished =
     invitation.status === "Published" ||
     invitation.status === "PUBLISHED" ||
     deploymentStatus === "HOSTED" ||
-    deploymentStatus === "APPROVED";
+    deploymentStatus === "APPROVED" ||
+    isOwnerOrAdmin;
 
-  // If not published and NOT in preview mode, show friendly unpublished status
+  // If not published and NOT in preview mode and NOT owner/admin, show friendly unpublished status
   if (!isPublished && !isPreviewMode) {
     return (
       <div className="min-h-screen bg-[#201814] text-[#FAF9F6] flex flex-col items-center justify-center font-sans p-6 text-center">
@@ -243,19 +267,30 @@ function InvitationRenderer() {
   return (
     <div className="min-h-screen w-full relative">
       {/* Floating Preview & Publish Banner (when in preview mode or for owner/admin) */}
-      {isPreviewMode && (
-        <header className="sticky top-0 z-50 bg-[#201814]/95 text-[#FAF9F6] backdrop-blur-md px-6 py-3 border-b border-white/10 flex items-center justify-between shadow-lg">
+      {(isPreviewMode || isOwnerOrAdmin) && (
+        <header className="sticky top-0 z-50 bg-[#201814]/95 text-[#FAF9F6] backdrop-blur-md px-6 py-3 border-b border-white/10 flex items-center justify-between shadow-lg font-sans">
           <div className="flex items-center gap-3">
-            <Link
-              to={`/client/builder/${invitation.slug}`}
-              className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#DCA963] hover:text-white transition-colors"
-            >
-              <ArrowLeft size={14} /> Back to Editor
-            </Link>
+            {user?.role === "ADMIN" ? (
+              <Link
+                to="/admin/invitations"
+                className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#DCA963] hover:text-white transition-colors"
+              >
+                <ArrowLeft size={14} /> Back to Admin
+              </Link>
+            ) : (
+              <Link
+                to={`/client/builder/${invitation.slug}`}
+                className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#DCA963] hover:text-white transition-colors"
+              >
+                <ArrowLeft size={14} /> Back to Editor
+              </Link>
+            )}
             <div className="h-4 w-px bg-white/20 hidden sm:block" />
             <div className="hidden sm:flex items-center gap-2 text-xs text-white/70">
-              <span>Preview Mode:</span>
-              <span className="font-semibold text-white">{invitation.couple_names || "Wedding Invitation"}</span>
+              <span>{user?.role === "ADMIN" ? "Admin Preview:" : "Preview Mode:"}</span>
+              <span className="font-semibold text-white">
+                {invitation.couple_names || "Wedding Invitation"}
+              </span>
             </div>
           </div>
 
@@ -272,7 +307,16 @@ function InvitationRenderer() {
               <span className="flex items-center gap-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
                 <CheckCircle2 size={12} /> Approved
               </span>
+            ) : user?.role === "ADMIN" ? (
+              /* When Admin is viewing, show Admin Console link rather than client publish button */
+              <Link
+                to="/admin/deployments"
+                className="flex items-center gap-1.5 bg-[#DCA963] hover:bg-[#C99750] text-[#201814] font-bold px-4 py-1.5 rounded-full text-xs uppercase tracking-widest transition-colors shadow-sm"
+              >
+                <Settings size={13} /> Admin Console
+              </Link>
             ) : (
+              /* For client owner: Publish / Request Hosting */
               <button
                 onClick={handlePublish}
                 disabled={isPublishing}

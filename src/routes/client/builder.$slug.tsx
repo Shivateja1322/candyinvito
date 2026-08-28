@@ -17,9 +17,15 @@ import {
   Settings,
   Circle,
   CheckCircle2,
+  Upload,
+  Music,
+  Video,
+  Play,
+  VolumeX,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../../lib/auth-context";
+import { uploadInvitationMedia } from "../../lib/storage";
 import {
   TemplateRenderer,
   themeCapabilities,
@@ -330,8 +336,29 @@ function ClientBuilder() {
 
   const renderControl = (control: TemplateControl, activePath: string) => {
     const val = getByPath(invitationRecord.content, activePath) || "";
-    
-    if (control.type === "url" || control.type === "text") {
+    const isMedia =
+      control.type === "url" ||
+      activePath.toLowerCase().includes("audio") ||
+      activePath.toLowerCase().includes("video") ||
+      control.label.toLowerCase().includes("audio") ||
+      control.label.toLowerCase().includes("video") ||
+      control.label.toLowerCase().includes("music");
+
+    if (isMedia) {
+      return (
+        <MediaFieldControl
+          key={activePath}
+          label={control.label}
+          value={val}
+          activePath={activePath}
+          updateData={updateData}
+          invitationId={invitationRecord.id}
+          userId={user?.id || "anonymous"}
+        />
+      );
+    }
+
+    if (control.type === "text") {
       return (
         <div key={activePath} className="mb-4">
           <label className="block text-[10px] font-bold uppercase tracking-widest text-black/50 mb-2">{control.label}</label>
@@ -600,6 +627,157 @@ function ClientBuilder() {
                )}
              </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MediaFieldControl({
+  label,
+  value,
+  activePath,
+  updateData,
+  invitationId,
+  userId,
+}: {
+  label: string;
+  value: string;
+  activePath: string;
+  updateData: (path: string, val: any) => void;
+  invitationId: string;
+  userId: string;
+}) {
+  const [isUploading, setIsUploading] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const isAudio =
+    activePath.toLowerCase().includes("audio") ||
+    label.toLowerCase().includes("audio") ||
+    label.toLowerCase().includes("music");
+  const isVideo =
+    activePath.toLowerCase().includes("video") || label.toLowerCase().includes("video");
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      const slotId = activePath.replace(/[^a-zA-Z0-9-]/g, "-");
+      const mediaUrl = await uploadInvitationMedia(userId, invitationId, slotId, file);
+      updateData(activePath, mediaUrl);
+      toast.success(`${isAudio ? "Audio" : isVideo ? "Video" : "Media"} uploaded successfully!`);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Failed to upload media");
+    } finally {
+      setIsUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  const toggleAudioTest = () => {
+    if (!value) return;
+    if (!audioRef.current) {
+      audioRef.current = new Audio(value);
+      audioRef.current.onended = () => setIsPlaying(false);
+    }
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.src = value;
+      audioRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch((e) => toast.error("Could not play audio: " + e.message));
+    }
+  };
+
+  return (
+    <div key={activePath} className="mb-5 bg-[#F9F8F6] p-3.5 rounded-xl border border-black/5">
+      <div className="flex items-center justify-between mb-2">
+        <label className="text-[10px] font-bold uppercase tracking-widest text-[#201814]/70 flex items-center gap-1.5">
+          {isAudio ? (
+            <Music size={12} className="text-[#DCA963]" />
+          ) : isVideo ? (
+            <Video size={12} className="text-[#DCA963]" />
+          ) : null}
+          {label}
+        </label>
+        {value && (
+          <button
+            type="button"
+            onClick={() => updateData(activePath, "")}
+            className="text-[10px] text-rose-500 hover:underline font-bold uppercase tracking-wider"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {/* Upload Local File or Enter URL */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <input
+            type="file"
+            ref={fileRef}
+            accept={
+              isAudio
+                ? "audio/mp3,audio/mpeg,audio/wav,audio/aac,audio/m4a,audio/ogg,.mp3,.wav,.m4a,.aac"
+                : isVideo
+                  ? "video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
+                  : "image/*,video/*,audio/*"
+            }
+            className="hidden"
+            onChange={handleFileUpload}
+          />
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={isUploading}
+            className="flex-1 flex items-center justify-center gap-1.5 bg-white hover:bg-[#201814] hover:text-white border border-black/10 rounded-lg py-2 text-xs font-bold uppercase tracking-wider transition-colors shadow-xs disabled:opacity-50"
+          >
+            {isUploading ? (
+              <Loader2 size={13} className="animate-spin text-[#DCA963]" />
+            ) : (
+              <Upload size={13} className="text-[#DCA963]" />
+            )}
+            {isUploading
+              ? "Uploading..."
+              : `Upload ${isAudio ? "Audio (MP3)" : isVideo ? "Video (MP4)" : "File"}`}
+          </button>
+
+          {isAudio && value && (
+            <button
+              type="button"
+              onClick={toggleAudioTest}
+              className="px-3 py-2 bg-[#201814] text-white rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1 hover:bg-[#382B23]"
+              title="Test audio playback"
+            >
+              {isPlaying ? <VolumeX size={13} /> : <Play size={13} />}
+              {isPlaying ? "Stop" : "Test"}
+            </button>
+          )}
+        </div>
+
+        <div>
+          <input
+            type="text"
+            placeholder={
+              isAudio
+                ? "Or paste direct MP3/Audio URL..."
+                : isVideo
+                  ? "Or paste direct MP4/Video URL..."
+                  : "Or paste URL..."
+            }
+            value={value}
+            onChange={(e) => updateData(activePath, e.target.value)}
+            className="w-full bg-white border border-black/10 rounded-lg px-3 py-2 text-xs font-mono text-black focus:outline-none focus:border-[#DCA963]"
+          />
         </div>
       </div>
     </div>

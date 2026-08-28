@@ -25,22 +25,26 @@ export const BackgroundVideo: React.FC<BackgroundVideoProps> = ({
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
-    if (!videoRef.current || !autoPlay) return;
+    setHasError(false);
+    if (!videoRef.current || !src) return;
 
-    // Attempt to play automatically
-    const playPromise = videoRef.current.play();
-    if (playPromise !== undefined) {
-      playPromise
-        .then(() => setIsVideoPlaying(true))
-        .catch((error) => {
-          console.warn("Autoplay prevented:", error);
-          setIsVideoPlaying(false);
-        });
+    videoRef.current.load();
+    if (autoPlay) {
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => setIsVideoPlaying(true))
+          .catch((error) => {
+            console.warn("Video autoplay prevented:", error);
+            setIsVideoPlaying(false);
+          });
+      }
     }
   }, [autoPlay, src]);
 
-  // If no video source or an error occurred, render a fallback image
+  // If no video source or an error occurred, render fallback image/poster
   if (!src || hasError) {
+    if (!poster) return null;
     return (
       <div className={`relative w-full h-full ${className}`}>
         <MediaImage src={poster} className="absolute inset-0 w-full h-full" priority />
@@ -50,13 +54,16 @@ export const BackgroundVideo: React.FC<BackgroundVideoProps> = ({
   }
 
   return (
-    <div className={`relative w-full h-full overflow-hidden bg-gray-900 ${className}`}>
-      {/* Poster image shown while loading or if video fails to play automatically */}
-      <MediaImage
-        src={poster}
-        className={`absolute inset-0 w-full h-full transition-opacity duration-1000 z-0 ${isVideoPlaying ? "opacity-0" : "opacity-100"}`}
-        priority
-      />
+    <div className={`relative w-full h-full overflow-hidden bg-black ${className}`}>
+      {poster && (
+        <MediaImage
+          src={poster}
+          className={`absolute inset-0 w-full h-full transition-opacity duration-1000 z-0 ${
+            isVideoPlaying ? "opacity-0" : "opacity-100"
+          }`}
+          priority
+        />
+      )}
 
       <video
         ref={videoRef}
@@ -66,6 +73,7 @@ export const BackgroundVideo: React.FC<BackgroundVideoProps> = ({
         loop={loop}
         muted={muted}
         playsInline
+        preload="auto"
         onError={() => setHasError(true)}
         onPlaying={() => setIsVideoPlaying(true)}
         className="absolute inset-0 w-full h-full object-cover z-0"

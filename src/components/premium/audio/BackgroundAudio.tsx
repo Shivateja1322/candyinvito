@@ -1,6 +1,6 @@
-import React, { useRef, useState, useEffect } from "react";
-import { Volume2, VolumeX, Music } from "lucide-react";
-import { motion } from "framer-motion";
+import React, { useRef, useState, useEffect, useCallback } from "react";
+import { Volume2, VolumeX, Music, Play } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export interface BackgroundAudioProps {
   src?: string;
@@ -11,51 +11,71 @@ export interface BackgroundAudioProps {
 
 export const BackgroundAudio: React.FC<BackgroundAudioProps> = ({
   src,
-  autoPlay = false,
+  autoPlay = true,
   position = "bottom-right",
   className = "",
 }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [hasInteracted, setHasInteracted] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
 
-  // Clean background music is rarely intrusive, but browser policies strictly block autoplay with sound
-  // unless the user has interacted with the document.
+  const startPlayback = useCallback(() => {
+    if (!audioRef.current || !src) return;
+    audioRef.current
+      .play()
+      .then(() => {
+        setIsPlaying(true);
+        setIsBlocked(false);
+      })
+      .catch((error) => {
+        console.warn("Audio autoplay blocked by browser policy:", error);
+        setIsPlaying(false);
+        setIsBlocked(true);
+      });
+  }, [src]);
 
   useEffect(() => {
-    if (!audioRef.current || !src) return;
+    if (!src || !audioRef.current) return;
 
-    // If autoPlay was requested, try to play
-    if (autoPlay && !hasInteracted) {
-      const playPromise = audioRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            setIsPlaying(true);
-            setHasInteracted(true);
-          })
-          .catch((error) => {
-            // Autoplay prevented by browser
-            console.log("Audio autoplay prevented by browser policy", error);
-            setIsPlaying(false);
-          });
-      }
+    if (autoPlay) {
+      startPlayback();
+
+      // Listen for first user interaction anywhere on document to start audio if blocked
+      const handleFirstInteraction = () => {
+        if (audioRef.current && audioRef.current.paused) {
+          startPlayback();
+        }
+      };
+
+      window.addEventListener("click", handleFirstInteraction, { once: true });
+      window.addEventListener("touchstart", handleFirstInteraction, { once: true });
+      window.addEventListener("scroll", handleFirstInteraction, { once: true });
+
+      return () => {
+        window.removeEventListener("click", handleFirstInteraction);
+        window.removeEventListener("touchstart", handleFirstInteraction);
+        window.removeEventListener("scroll", handleFirstInteraction);
+      };
     }
-  }, [src, autoPlay, hasInteracted]);
+  }, [src, autoPlay, startPlayback]);
 
   const togglePlay = () => {
     if (!audioRef.current) return;
 
-    setHasInteracted(true);
-
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
+      setIsBlocked(false);
     } else {
       audioRef.current
         .play()
-        .then(() => setIsPlaying(true))
-        .catch((e) => console.error("Error playing audio", e));
+        .then(() => {
+          setIsPlaying(true);
+          setIsBlocked(false);
+        })
+        .catch((e) => {
+          console.error("Error playing audio:", e);
+        });
     }
   };
 
@@ -70,35 +90,48 @@ export const BackgroundAudio: React.FC<BackgroundAudioProps> = ({
 
   return (
     <>
-      <audio ref={audioRef} src={src} loop preload="auto" />
+      <audio
+        ref={audioRef}
+        src={src}
+        loop
+        preload="auto"
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+      />
 
-      <motion.button
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 1 }}
-        onClick={togglePlay}
-        className={`fixed z-[100] p-3 rounded-full backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.15)] transition-all flex items-center justify-center
-          ${
+      <div className={`fixed z-[100] ${positionClasses[position]} ${className}`}>
+        <motion.button
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          onClick={togglePlay}
+          className={`group px-3 py-2 rounded-full backdrop-blur-md shadow-xl transition-all flex items-center gap-2 border ${
             isPlaying
-              ? "bg-white/90 text-gray-900 border border-gray-200"
-              : "bg-black/60 text-white border border-white/20 hover:bg-black/80"
-          } ${positionClasses[position]} ${className}`}
-        aria-label={isPlaying ? "Mute background music" : "Play background music"}
-      >
-        {isPlaying ? (
-          <Volume2 size={20} className="animate-pulse" />
-        ) : (
-          <div className="relative">
-            <VolumeX size={20} />
-            {!hasInteracted && autoPlay && (
-              <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+              ? "bg-[#201814]/90 text-[#DCA963] border-[#DCA963]/30 hover:bg-[#201814]"
+              : "bg-white/90 text-[#201814] border-black/10 hover:bg-white"
+          }`}
+          aria-label={isPlaying ? "Mute music" : "Play music"}
+        >
+          {isPlaying ? (
+            <>
+              <div className="flex items-end gap-0.5 h-3.5 px-0.5">
+                <span className="w-0.5 bg-[#DCA963] rounded-full animate-[bounce_0.8s_infinite] h-3"></span>
+                <span className="w-0.5 bg-[#DCA963] rounded-full animate-[bounce_0.6s_infinite] h-2"></span>
+                <span className="w-0.5 bg-[#DCA963] rounded-full animate-[bounce_1s_infinite] h-3.5"></span>
+                <span className="w-0.5 bg-[#DCA963] rounded-full animate-[bounce_0.7s_infinite] h-2.5"></span>
+              </div>
+              <Volume2 size={15} />
+            </>
+          ) : (
+            <>
+              <VolumeX size={15} className="text-black/60" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-black/70 group-hover:text-black">
+                Play Music
               </span>
-            )}
-          </div>
-        )}
-      </motion.button>
+            </>
+          )}
+        </motion.button>
+      </div>
     </>
   );
 };
