@@ -9,12 +9,14 @@ export function ImageUploadControl({
   onUpload,
   invitationId,
   slotId,
+  userId,
 }: {
   label: string;
   value: string;
   onUpload: (url: string) => void;
   invitationId: string;
   slotId: string;
+  userId?: string;
 }) {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -25,7 +27,7 @@ export function ImageUploadControl({
 
     try {
       setIsUploading(true);
-      const url = await uploadInvitationImage(invitationId, slotId, file);
+      const url = await uploadInvitationImage(userId || "anonymous", invitationId, slotId, file);
       onUpload(url);
       toast.success("Image uploaded successfully!");
     } catch (err: any) {

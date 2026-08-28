@@ -22,7 +22,8 @@ export const EditableImage: React.FC<EditableImageProps> = ({
   className = "",
   alt = "",
 }) => {
-  const { isBuilderMode, updateData, data, invitationId } = useBuilder();
+  const { isBuilderMode, updateData, data, invitationId, userId } = useBuilder();
+
   const [isSelected, setIsSelected] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -61,7 +62,7 @@ export const EditableImage: React.FC<EditableImageProps> = ({
     try {
       setIsUploading(true);
       const slotId = activePath.replace(/[^a-zA-Z0-9-]/g, '-');
-      const url = await uploadInvitationImage(invitationId, slotId, file);
+      const url = await uploadInvitationImage(userId || "anonymous", invitationId, slotId, file);
       updateData(activePath, url);
       updateData(posXPath, 50);
       updateData(posYPath, 50);

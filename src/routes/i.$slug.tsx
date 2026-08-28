@@ -54,9 +54,10 @@ function InvitationRenderer() {
         const urlParams = new URLSearchParams(window.location.search);
         const mode = urlParams.get('mode');
         if (mode !== 'preview') {
-          // Check if HOSTED
+          // Check if HOSTED via deployment_requests (the primary hosting mechanism)
           const { data: req } = await supabase.from("deployment_requests").select("*").eq("invitation_id", inv.id).eq("status", "HOSTED").maybeSingle();
-          if (!req && inv.status !== "PUBLISHED") {
+          const invIsPublished = inv.status === "Published" || inv.status === "PUBLISHED";
+          if (!req && !invIsPublished) {
              setError("UNPUBLISHED");
              return;
           }
@@ -106,9 +107,11 @@ function InvitationRenderer() {
     typeof window !== "undefined" && window.location.search.includes("mode=builder");
 
   // Allow previewing local drafts or builder mode
-  if (invitation.status !== "Published" && !invitation.client_id) {
+  // DB status is 'Published' (per CHECK constraint in schema)
+  const isPublished = invitation.status === "Published" || invitation.status === "PUBLISHED";
+  if (!invitation.client_id && !isPublished) {
     // If there's no client_id, it's likely a local draft. We let them see it!
-  } else if (invitation.status !== "Published" && !isBuilderMode) {
+  } else if (!isPublished && !isBuilderMode) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center font-display">
         <div className="text-center space-y-4">

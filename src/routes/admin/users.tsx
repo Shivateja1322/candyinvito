@@ -63,6 +63,8 @@ export const Route = createFileRoute("/admin/users")({
 function UserManagement() {
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserPassword, setNewUserPassword] = useState("");
+  const [newUserName, setNewUserName] = useState("");
+  const [newUserRole, setNewUserRole] = useState<"ADMIN" | "CLIENT">("CLIENT");
   const [isCreating, setIsCreating] = useState(false);
 
   const handleResetPassword = async (email: string) => {
@@ -117,6 +119,8 @@ function UserManagement() {
       toast.success(`User ${newUserEmail} created successfully.`);
       setNewUserEmail("");
       setNewUserPassword("");
+      setNewUserName("");
+      setNewUserRole("CLIENT");
 
       setTimeout(() => fetchUsers(), 1000);
     } catch (error: any) {
@@ -187,6 +191,22 @@ function UserManagement() {
               <form onSubmit={handleCreateUser} className="space-y-5">
                 <div className="space-y-2">
                   <Label
+                    htmlFor="newUserName"
+                    className="text-xs tracking-wider uppercase text-muted-foreground"
+                  >
+                    Client Name
+                  </Label>
+                  <Input
+                    id="newUserName"
+                    type="text"
+                    placeholder="Couple Name (e.g. Arjun & Priya)"
+                    value={newUserName}
+                    onChange={(e) => setNewUserName(e.target.value)}
+                    className="border-gold/20 focus-visible:ring-gold/50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label
                     htmlFor="newUserEmail"
                     className="text-xs tracking-wider uppercase text-muted-foreground"
                   >
@@ -219,6 +239,23 @@ function UserManagement() {
                     minLength={6}
                     className="border-gold/20 focus-visible:ring-gold/50"
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="newUserRole"
+                    className="text-xs tracking-wider uppercase text-muted-foreground"
+                  >
+                    Role
+                  </Label>
+                  <select
+                    id="newUserRole"
+                    value={newUserRole}
+                    onChange={(e) => setNewUserRole(e.target.value as "ADMIN" | "CLIENT")}
+                    className="w-full border border-gold/20 rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-gold/50"
+                  >
+                    <option value="CLIENT">Client</option>
+                    <option value="ADMIN">Admin</option>
+                  </select>
                 </div>
                 <Button
                   type="submit"

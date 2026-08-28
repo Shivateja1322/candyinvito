@@ -8,7 +8,6 @@ import {
   Palette,
   Eye,
   Users,
-  Globe,
   BarChart,
   Settings,
   LogOut,
@@ -24,7 +23,6 @@ const clientNavigation = [
   { name: "Dashboard", href: "/client", icon: LayoutDashboard },
   { name: "Templates", href: "/client/templates", icon: FileText },
   { name: "RSVP", href: "/client/rsvp", icon: Users },
-  { name: "Deployment", href: "/client/deployment", icon: Globe },
 ];
 
 function ClientLayout() {

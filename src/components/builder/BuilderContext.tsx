@@ -7,6 +7,7 @@ type BuilderContextType = {
   updateData: (key: string, value: any) => void;
   data: any;
   invitationId?: string;
+  userId?: string;
 };
 
 const BuilderContext = createContext<BuilderContextType | null>(null);
@@ -19,10 +20,11 @@ export function BuilderProvider({
   updateData,
   data,
   invitationId,
+  userId,
 }: BuilderContextType & { children: React.ReactNode }) {
   return (
     <BuilderContext.Provider
-      value={{ isBuilderMode, activeSection, setActiveSection, updateData, data, invitationId }}
+      value={{ isBuilderMode, activeSection, setActiveSection, updateData, data, invitationId, userId }}
     >
       {children}
     </BuilderContext.Provider>
@@ -32,7 +34,7 @@ export function BuilderProvider({
 export function useBuilder() {
   const context = useContext(BuilderContext);
   if (!context) {
-    // If not in builder context (e.g. public view), return mock
+    // If not in builder context (e.g. public view), return safe defaults
     return {
       isBuilderMode: false,
       activeSection: "",
@@ -40,6 +42,7 @@ export function useBuilder() {
       updateData: () => {},
       data: {},
       invitationId: "",
+      userId: "",
     };
   }
   return context;

@@ -127,7 +127,7 @@ function ClientRsvpComponent() {
             className="border border-black/10 rounded-xl px-4 py-2.5 text-sm bg-white font-medium outline-none focus:border-[#DCA963]"
           >
             {invitations.map(inv => (
-              <option key={inv.id} value={inv.id}>{inv.title || "Untitled Invitation"}</option>
+              <option key={inv.id} value={inv.id}>{inv.couple_names || inv.title || "Untitled Invitation"}</option>
             ))}
           </select>
           <button 

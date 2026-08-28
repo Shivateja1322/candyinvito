@@ -1,4 +1,4 @@
-﻿import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
@@ -77,14 +77,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "CandyInvito â€” Premium Digital Wedding Invitations" },
+      { title: "CandyInvito – Premium Digital Wedding Invitations" },
       {
         name: "description",
         content:
           "Design, customize and share a cinematic digital wedding invitation with RSVP, livestream and analytics built in.",
       },
       { name: "author", content: "CandyInvito" },
-      { property: "og:title", content: "CandyInvito â€” Premium Digital Wedding Invitations" },
+      { property: "og:title", content: "CandyInvito – Premium Digital Wedding Invitations" },
       {
         property: "og:description",
         content: "Cinematic digital wedding invitations with RSVP, livestream and analytics.",

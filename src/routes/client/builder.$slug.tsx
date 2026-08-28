@@ -110,11 +110,12 @@ function ClientBuilder() {
         const migratedContent = normalizeInvitationContent(data.content);
         data.content = migratedContent;
 
-        const localDraft = localStorage.getItem(`candyinvito:draft:${slug}`);
+        const localDraft = typeof window !== "undefined" ? localStorage.getItem(`candyinvito:draft:${slug}`) : null;
         if (localDraft) {
           try {
             const parsed = JSON.parse(localDraft);
-            if (window.confirm("Unsaved local changes found from a previous session. Restore them?")) {
+            const restore = typeof window !== "undefined" && window.confirm("Unsaved local changes found from a previous session. Restore them?");
+            if (restore) {
               data.content = parsed;
               setSaveStatus("unsaved");
             } else {
@@ -368,7 +369,7 @@ function ClientBuilder() {
           </button>
         </div>
         <div className="flex-1 overflow-y-auto">
-          <BuilderProvider isBuilderMode={false} activeSection="" setActiveSection={()=>{}} updateData={()=>{}} data={invitationRecord.content}>
+          <BuilderProvider isBuilderMode={false} activeSection="" setActiveSection={()=>{}} updateData={()=>{}} data={invitationRecord.content} userId={user?.id}>
             <TemplateRenderer templateId={currentThemeId} data={invitationRecord.content} invitationId={invitationRecord.id} />
           </BuilderProvider>
         </div>
@@ -539,7 +540,7 @@ function ClientBuilder() {
              >
                {viewport !== "desktop" ? (
                  <IFramePreview className="w-full h-full bg-white" width={`${viewport}px`}>
-                   <BuilderProvider isBuilderMode={true} activeSection={expandedSection} setActiveSection={setExpandedSection} updateData={updateData} data={invitationRecord.content} invitationId={invitationRecord.id}>
+                   <BuilderProvider isBuilderMode={true} activeSection={expandedSection} setActiveSection={setExpandedSection} updateData={updateData} data={invitationRecord.content} invitationId={invitationRecord.id} userId={user?.id}>
                      <TemplateRenderer
                         templateId={currentThemeId}
                         data={invitationRecord.content}
@@ -548,7 +549,7 @@ function ClientBuilder() {
                    </BuilderProvider>
                  </IFramePreview>
                ) : (
-                 <BuilderProvider isBuilderMode={true} activeSection={expandedSection} setActiveSection={setExpandedSection} updateData={updateData} data={invitationRecord.content} invitationId={invitationRecord.id}>
+                 <BuilderProvider isBuilderMode={true} activeSection={expandedSection} setActiveSection={setExpandedSection} updateData={updateData} data={invitationRecord.content} invitationId={invitationRecord.id} userId={user?.id}>
                    <TemplateRenderer
                       templateId={currentThemeId}
                       data={invitationRecord.content}

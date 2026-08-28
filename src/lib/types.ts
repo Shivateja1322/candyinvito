@@ -26,6 +26,7 @@ export interface User {
   email: string;
   role: Role;
   avatarInitials: string;
+  status?: string;
 }
 
 export interface Client {
@@ -47,19 +48,26 @@ export interface Invitation {
   id: string;
   slug: string;
   clientId: string;
+  client_id: string; // DB snake_case alias
   title: string;
+  couple_names: string; // DB column name
   templateId: string;
+  template_id: string; // DB snake_case alias
   themeId: string;
   state: DeploymentState;
+  status: string;
   weddingDate: string;
   venue: string;
   city: string;
   coverImage: string;
   updatedAt: string;
+  updated_at: string;
+  created_at: string;
   views: number;
   rsvpCount: number;
   musicEnabled: boolean;
   livestreamEnabled: boolean;
+  content: Record<string, unknown>;
 }
 
 export type SectionKind =

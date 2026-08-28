@@ -1,4 +1,4 @@
-﻿import { useEffect } from "react";
+import { useEffect } from "react";
 import { createFileRoute, Outlet, useNavigate, Navigate, Link, useLocation } from "@tanstack/react-router";
 import { useAuth } from "../lib/auth-context";
 import { Button } from "../components/ui/button";
@@ -23,13 +23,10 @@ export const Route = createFileRoute("/admin")({
 const adminNavigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "User Management", href: "/admin/users", icon: Users },
-  
-  
-  
+  { name: "Invitations", href: "/admin/invitations", icon: Mail },
   { name: "Deployments", href: "/admin/deployments", icon: Globe },
   { name: "RSVPs", href: "/admin/rsvps", icon: FileText },
   { name: "Analytics", href: "/admin/analytics", icon: BarChart },
-  
 ];
 
 function AdminLayout() {

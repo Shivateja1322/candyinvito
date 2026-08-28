@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../lib/auth-context";
 import { supabase } from "../../lib/supabase";
@@ -102,8 +102,9 @@ function DeploymentsPage() {
       return (
         req.id.toLowerCase().includes(term) ||
         req.requested_by.toLowerCase().includes(term) ||
-        req.invitation?.title.toLowerCase().includes(term) ||
-        req.invitation?.slug.toLowerCase().includes(term)
+        (req.invitation?.couple_names ?? "").toLowerCase().includes(term) ||
+        (req.invitation?.title ?? "").toLowerCase().includes(term) ||
+        (req.invitation?.slug ?? "").toLowerCase().includes(term)
       );
     }
     return true;
@@ -176,7 +177,7 @@ function DeploymentsPage() {
                     <td className="px-6 py-4">
                       {req.invitation ? (
                         <div className="flex flex-col">
-                          <span className="text-sm font-medium text-[#201814]">{req.invitation.title}</span>
+                          <span className="text-sm font-medium text-[#201814]">{req.invitation.couple_names || req.invitation.title || "Untitled"}</span>
                           <span className="text-xs text-[#201814]/50">/{req.invitation.slug}</span>
                         </div>
                       ) : (

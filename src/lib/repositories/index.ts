@@ -1,4 +1,4 @@
-﻿import { supabase } from "../supabase";
+import { supabase } from "../supabase";
 import {
   mockAnalytics,
   mockClients,
@@ -90,13 +90,47 @@ const setLocalInvites = (invs: any) => {
   } catch (e) {}
 };
 
+/**
+ * Normalizes a raw DB row (snake_case) to the Invitation interface (which
+ * historically used camelCase). Preserves the original snake_case fields too,
+ * since some code (e.g. the builder ownership check) reads client_id directly.
+ */
+const normalizeInvitation = (raw: any): Invitation => {
+  if (!raw) return raw;
+  return {
+    ...raw,
+    // Map DB columns → type fields
+    clientId: raw.client_id ?? raw.clientId ?? "",
+    client_id: raw.client_id ?? raw.clientId ?? "",
+    title: raw.couple_names ?? raw.title ?? "",
+    couple_names: raw.couple_names ?? raw.title ?? "",
+    templateId: raw.template_id ?? raw.templateId ?? "",
+    template_id: raw.template_id ?? raw.templateId ?? "",
+    updated_at: raw.updated_at ?? "",
+    created_at: raw.created_at ?? "",
+    // Provide defaults for optional fields that may not come from DB
+    themeId: raw.template_id ?? raw.templateId ?? raw.themeId ?? "",
+    state: raw.state ?? "DRAFT",
+    weddingDate: raw.wedding_date ?? raw.weddingDate ?? "",
+    venue: raw.venue ?? "",
+    city: raw.city ?? "",
+    coverImage: raw.cover_image ?? raw.coverImage ?? "",
+    updatedAt: raw.updated_at ?? raw.updatedAt ?? "",
+    views: raw.views ?? 0,
+    rsvpCount: raw.rsvp_count ?? raw.rsvpCount ?? 0,
+    musicEnabled: raw.music_enabled ?? raw.musicEnabled ?? false,
+    livestreamEnabled: raw.livestream_enabled ?? raw.livestreamEnabled ?? false,
+    content: raw.content ?? {},
+  } as Invitation;
+};
+
 export const invitationRepository = {
   list: async (): Promise<Invitation[]> => {
     try {
       const { data, error } = await supabase.from("invitations").select("*").order("created_at", { ascending: false });
-      if (!error && data) return data as Invitation[];
+      if (!error && data) return data.map(normalizeInvitation);
     } catch(e) {}
-    return Object.values(getLocalInvites());
+    return Object.values(getLocalInvites()).map(normalizeInvitation);
   },
   listByClient: async (clientId: string): Promise<Invitation[]> => {
     let dbInvites: any[] = [];
@@ -106,26 +140,26 @@ export const invitationRepository = {
     } catch (e) {}
     
     const local = Object.values(getLocalInvites()).filter((i: any) => i.client_id === clientId);
-    return [...dbInvites, ...local] as Invitation[];
+    return [...dbInvites, ...local].map(normalizeInvitation);
   },
   get: async (id: string): Promise<Invitation | null> => {
     try {
       const { data, error } = await supabase.from("invitations").select("*").eq("id", id).single();
-      if (!error && data) return data as Invitation;
+      if (!error && data) return normalizeInvitation(data);
     } catch(e) {}
     
     const local = getLocalInvites();
     const match = Object.values(local).find((i: any) => i.id === id);
-    return (match as Invitation) || null;
+    return match ? normalizeInvitation(match) : null;
   },
   getBySlug: async (slug: string): Promise<Invitation | null> => {
     try {
       const { data, error } = await supabase.from("invitations").select("*").eq("slug", slug).single();
-      if (!error && data) return data as Invitation;
+      if (!error && data) return normalizeInvitation(data);
     } catch(e) {}
     
     const local = getLocalInvites();
-    if (local[slug]) return local[slug] as Invitation;
+    if (local[slug]) return normalizeInvitation(local[slug]);
     return null;
   },
   create: async (userId: string, title: string, templateId: string): Promise<Invitation> => {
@@ -151,19 +185,19 @@ export const invitationRepository = {
         content: {},
         status: "Draft"
       }).select().single();
-      if (!error && data) return data as Invitation;
+      if (!error && data) return normalizeInvitation(data);
     } catch(e) {}
     
     // Fallback to local storage if DB fails
     const local = getLocalInvites();
     local[slug] = payload;
     setLocalInvites(local);
-    return payload as unknown as Invitation;
+    return normalizeInvitation(payload);
   },
   update: async (invitationId: string, patch: Partial<Invitation>): Promise<Invitation> => {
     try {
       const { data, error } = await supabase.from("invitations").update(patch).eq("id", invitationId).select().single();
-      if (!error && data) return data as Invitation;
+      if (!error && data) return normalizeInvitation(data);
     } catch(e) {}
     
     const local = getLocalInvites();
@@ -171,7 +205,7 @@ export const invitationRepository = {
     if (slug) {
       local[slug] = { ...local[slug], ...patch, updated_at: new Date().toISOString() };
       setLocalInvites(local);
-      return local[slug] as Invitation;
+      return normalizeInvitation(local[slug]);
     }
     throw new Error("Invitation not found");
   },
@@ -190,18 +224,30 @@ export const invitationRepository = {
   }
 };
 
+import { themeCapabilities } from "../../templates/TemplateRegistry";
+
+// Convert canonical themeCapabilities into Template objects
+const canonicalTemplates: Template[] = Object.values(themeCapabilities).map(theme => ({
+  id: theme.id,
+  slug: theme.id,
+  name: theme.name,
+  tagline: theme.description,
+  style: theme.styleCategory,
+  sections: theme.sections.map(s => s.id),
+  previewImage: theme.thumbnail,
+  popularity: 100,
+  isPremium: false
+}));
+
 export const templateRepository = {
-  list: () => delay(db.templates),
-  get: (templateId: string) => delay(db.templates.find((t) => t.id === templateId) ?? null),
-  getBySlug: (slug: string) => delay(db.templates.find((t) => t.slug === slug) ?? null),
-  create: (input: Omit<Template, "id">) => {
-    const created: Template = { ...input, id: id("t") };
-    db.templates = [created, ...db.templates];
-    return delay(created);
+  list: async () => canonicalTemplates,
+  get: async (templateId: string) => canonicalTemplates.find((t) => t.id === templateId) ?? null,
+  getBySlug: async (slug: string) => canonicalTemplates.find((t) => t.slug === slug) ?? null,
+  create: async (input: Omit<Template, "id">) => {
+    throw new Error("Cannot create templates at runtime");
   },
-  update: (templateId: string, patch: Partial<Template>) => {
-    db.templates = db.templates.map((t) => (t.id === templateId ? { ...t, ...patch } : t));
-    return delay(db.templates.find((t) => t.id === templateId)!);
+  update: async (templateId: string, patch: Partial<Template>) => {
+    throw new Error("Cannot update templates at runtime");
   },
 };
 
