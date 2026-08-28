@@ -426,6 +426,34 @@ export const deploymentRequestRepository = {
     if (error) throw error;
     return data as DeploymentRequest;
   },
+  remove: async (requestId: string): Promise<boolean> => {
+    try {
+      const { data: req } = await supabase
+        .from("deployment_requests")
+        .select("invitation_id")
+        .eq("id", requestId)
+        .maybeSingle();
+
+      const { error } = await supabase
+        .from("deployment_requests")
+        .delete()
+        .eq("id", requestId);
+      if (error) {
+        console.error("Error deleting deployment request:", error);
+      }
+
+      if (req?.invitation_id) {
+        await supabase
+          .from("invitations")
+          .update({ status: "Draft" })
+          .eq("id", req.invitation_id);
+      }
+      return true;
+    } catch (err) {
+      console.error("Failed to remove deployment request:", err);
+      throw err;
+    }
+  },
 };
 
 export const analyticsRepository = {

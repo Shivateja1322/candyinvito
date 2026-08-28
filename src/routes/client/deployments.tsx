@@ -16,6 +16,9 @@ import {
   Copy,
   Calendar,
   Sparkles,
+  Trash2,
+  MessageCircle,
+  Share2,
 } from "lucide-react";
 import { DeploymentRequest, Invitation } from "../../lib/types";
 
@@ -94,10 +97,54 @@ function ClientDeploymentsPage() {
     }
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success("Link copied to clipboard!");
+  const handleDeleteDeployment = async (reqId: string, isHosted: boolean) => {
+    const confirmMessage = isHosted
+      ? "Delete this hosted deployment? The live link will be taken down and your invitation will return to Draft."
+      : "Delete this deployment request?";
+
+    if (!window.confirm(confirmMessage)) return;
+
+    try {
+      await deploymentRequestRepository.remove(reqId);
+      toast.success(
+        isHosted
+          ? "Hosted deployment deleted and invitation unhosted."
+          : "Deployment request deleted.",
+      );
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete deployment request.");
+    }
   };
+
+  const copyToClipboard = async (text: string) => {
+    if (!text) return;
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        toast.success("Guest link copied to clipboard!");
+        return;
+      }
+    } catch (e) {}
+
+    try {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+      toast.success("Guest link copied to clipboard!");
+    } catch (err) {
+      toast.error("Failed to copy link.");
+    }
+  };
+
+  const hostedRequests = requests.filter((r) => r.status === "HOSTED");
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-10 animate-fade-in font-sans">
@@ -110,7 +157,7 @@ function ClientDeploymentsPage() {
             Deployments & Hosting
           </h1>
           <p className="text-black/50 text-sm mt-1">
-            Track custom domain publishing, hosting approvals, and live links for your guests.
+            Track custom domain publishing, hosting approvals, and congratulations messages for your guests.
           </p>
         </div>
         <Link
@@ -120,6 +167,98 @@ function ClientDeploymentsPage() {
           <Plus size={14} /> Create New Invitation
         </Link>
       </header>
+
+      {/* Prominent Congratulations Cards for Hosted Invitations */}
+      {hostedRequests.length > 0 && (
+        <div className="space-y-6">
+          {hostedRequests.map((hostedReq) => {
+            const invSlug = hostedReq.invitation?.slug;
+            const coupleNames =
+              hostedReq.invitation?.couple_names ||
+              hostedReq.invitation?.title ||
+              "Your Wedding";
+            const liveUrl = invSlug
+              ? `${typeof window !== "undefined" ? window.location.origin : ""}/i/${invSlug}`
+              : "";
+            const whatsappText = `🎉 Join us in celebrating our wedding! View our digital invitation and RSVP here: ${liveUrl}`;
+
+            return (
+              <div
+                key={`congrats-${hostedReq.id}`}
+                className="bg-gradient-to-br from-[#201814] via-[#2D221C] to-[#1E1713] text-white rounded-3xl p-8 shadow-xl border border-[#DCA963]/30 relative overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                  <Sparkles size={160} className="text-[#DCA963]" />
+                </div>
+
+                <div className="relative z-10 space-y-5">
+                  <div className="flex items-center gap-2.5">
+                    <span className="bg-[#DCA963] text-[#201814] text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                      <Sparkles size={11} /> Hosted & Live
+                    </span>
+                    {hostedReq.expires_at && (
+                      <span className="text-xs text-white/60">
+                        Valid until {new Date(hostedReq.expires_at).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
+
+                  <div>
+                    <h2 className="text-2xl md:text-3xl font-serif font-bold text-white mb-2">
+                      🎉 Congratulations, {coupleNames}!
+                    </h2>
+                    <p className="text-white/80 text-sm max-w-2xl leading-relaxed">
+                      We are delighted to share that your luxury wedding invitation is officially
+                      hosted and live! Your guests can now view your custom design, photo gallery,
+                      interactive schedule, and submit their RSVPs.
+                    </p>
+                  </div>
+
+                  {/* Live Link Box & Actions */}
+                  <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-[#DCA963]">
+                        Official Guest Invitation Link
+                      </span>
+                      <span className="font-mono text-sm text-white truncate max-w-lg mt-0.5">
+                        {liveUrl}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap shrink-0">
+                      <button
+                        onClick={() => copyToClipboard(liveUrl)}
+                        className="bg-[#DCA963] hover:bg-[#C99750] text-[#201814] font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition-colors flex items-center gap-1.5 shadow-sm"
+                      >
+                        <Copy size={13} /> Copy Link
+                      </button>
+
+                      <a
+                        href={`https://api.whatsapp.com/send?text=${encodeURIComponent(whatsappText)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition-colors flex items-center gap-1.5 shadow-sm"
+                        title="Share via WhatsApp"
+                      >
+                        <MessageCircle size={13} /> WhatsApp
+                      </a>
+
+                      <a
+                        href={liveUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="bg-white/20 hover:bg-white/30 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition-colors flex items-center gap-1.5"
+                      >
+                        <ExternalLink size={13} /> View Live
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Deployment History Table */}
       <div className="bg-white rounded-2xl border border-black/10 shadow-sm overflow-hidden">
@@ -171,6 +310,7 @@ function ClientDeploymentsPage() {
                     ? `${typeof window !== "undefined" ? window.location.origin : ""}/i/${invSlug}`
                     : "";
                   const previewUrl = invSlug ? `/i/${invSlug}?mode=preview` : "";
+                  const isHosted = req.status === "HOSTED";
 
                   return (
                     <tr key={req.id} className="hover:bg-[#FAF9F6]/50 transition-colors">
@@ -256,7 +396,7 @@ function ClientDeploymentsPage() {
                       </td>
 
                       <td className="px-6 py-4 text-right pr-6">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-2 flex-wrap">
                           {previewUrl && (
                             <a
                               href={previewUrl}
@@ -278,6 +418,14 @@ function ClientDeploymentsPage() {
                               <ExternalLink size={13} /> Open Live
                             </a>
                           )}
+
+                          <button
+                            onClick={() => handleDeleteDeployment(req.id, isHosted)}
+                            className="p-1.5 text-black/40 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                            title={isHosted ? "Delete & Unhost Live Invitation" : "Delete Request"}
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
                       </td>
                     </tr>

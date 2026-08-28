@@ -18,7 +18,7 @@ import {
   Calendar,
   Send,
   Mail,
-  MessageSquare,
+  Trash2,
   Sparkles,
 } from "lucide-react";
 import {
@@ -51,10 +51,12 @@ function DeploymentsPage() {
 
   // Client notification modal state
   const [notifyModalData, setNotifyModalData] = useState<{
+    requestId?: string;
     clientEmail: string;
     clientName: string;
     coupleNames: string;
     liveUrl: string;
+    customMessage?: string;
   } | null>(null);
 
   const fetchRequests = async () => {
@@ -146,16 +148,38 @@ function DeploymentsPage() {
       setHostId(null);
       fetchRequests();
 
-      // Open notification dialog to easily send live link to the client
+      // Open congratulations notification dialog to easily send live link to the client
       const liveUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/i/${reqItem?.invitation?.slug || ""}`;
       setNotifyModalData({
+        requestId: reqId,
         clientEmail: reqItem?.clientEmail || "",
-        clientName: reqItem?.clientName || "Valued Client",
+        clientName: reqItem?.clientName || "Valued Couple",
         coupleNames: reqItem?.invitation?.couple_names || reqItem?.invitation?.title || "Wedding",
         liveUrl,
+        customMessage: `Dear ${reqItem?.clientName || "Valued Couple"},\n\nCongratulations! We are delighted to share that your luxury wedding invitation for ${reqItem?.invitation?.couple_names || "your wedding"} is now officially HOSTED & LIVE!\n\nGuest Invitation Link: ${liveUrl}\n\nYour guests can now view the full invitation, interactive schedule, and submit RSVPs.\n\nWarm regards,\nCandyInvito Studio`,
       });
     } catch (err: any) {
       toast.error(err.message || "Failed to host invitation.");
+    }
+  };
+
+  const handleDeleteDeployment = async (reqId: string, isHosted: boolean) => {
+    const confirmMessage = isHosted
+      ? "Delete this hosted deployment? The live link will be taken down and the invitation will return to Draft."
+      : "Delete this deployment request?";
+
+    if (!window.confirm(confirmMessage)) return;
+
+    try {
+      await deploymentRequestRepository.remove(reqId);
+      toast.success(
+        isHosted
+          ? "Hosted deployment deleted and live link taken down."
+          : "Deployment request deleted.",
+      );
+      fetchRequests();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete deployment request.");
     }
   };
 
@@ -181,9 +205,31 @@ function DeploymentsPage() {
     }
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success("Copied to clipboard!");
+  const copyToClipboard = async (text: string) => {
+    if (!text) return;
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        toast.success("Copied to clipboard!");
+        return;
+      }
+    } catch (e) {}
+
+    try {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+      toast.success("Copied to clipboard!");
+    } catch (err) {
+      toast.error("Failed to copy.");
+    }
   };
 
   const filteredRequests = requests.filter((req) => {
@@ -284,6 +330,7 @@ function DeploymentsPage() {
                     ? `${typeof window !== "undefined" ? window.location.origin : ""}/i/${invSlug}`
                     : "";
                   const previewUrl = invSlug ? `/i/${invSlug}?mode=preview` : "";
+                  const isHosted = req.status === "HOSTED";
 
                   return (
                     <tr key={req.id} className="hover:bg-[#FAF9F6]/60 transition-colors">
@@ -364,7 +411,7 @@ function DeploymentsPage() {
                       </td>
 
                       <td className="px-6 py-4 text-right pr-6">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-2 flex-wrap">
                           {/* Preview Link */}
                           {previewUrl && (
                             <a
@@ -462,26 +509,37 @@ function DeploymentsPage() {
                             </div>
                           )}
 
-                          {/* Action when HOSTED -> Send to Client button */}
+                          {/* Action when HOSTED -> Send Congratulations to Client button */}
                           {req.status === "HOSTED" && (
                             <button
                               onClick={() =>
                                 setNotifyModalData({
+                                  requestId: req.id,
                                   clientEmail: req.clientEmail || "",
-                                  clientName: req.clientName || "Valued Client",
+                                  clientName: req.clientName || "Valued Couple",
                                   coupleNames:
                                     req.invitation?.couple_names ||
                                     req.invitation?.title ||
                                     "Wedding",
                                   liveUrl,
+                                  customMessage: `Dear ${req.clientName || "Valued Couple"},\n\nCongratulations! We are delighted to share that your luxury wedding invitation for ${req.invitation?.couple_names || "your wedding"} is now officially HOSTED & LIVE!\n\nGuest Invitation Link: ${liveUrl}\n\nYour guests can now view the full invitation, interactive schedule, and submit RSVPs.\n\nWarm regards,\nCandyInvito Studio`,
                                 })
                               }
                               className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#201814] bg-[#DCA963]/20 hover:bg-[#DCA963] hover:text-[#201814] px-3 py-1.5 rounded-lg transition-colors"
-                              title="Send or share live invitation link to client"
+                              title="Send or share congratulations message to client"
                             >
-                              <Send size={12} /> Send to Client
+                              <Sparkles size={12} className="text-[#DCA963]" /> Send Congratulations
                             </button>
                           )}
+
+                          {/* Option to Delete / Take down deployment request */}
+                          <button
+                            onClick={() => handleDeleteDeployment(req.id, isHosted)}
+                            className="p-1.5 text-black/40 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                            title={isHosted ? "Delete & Unhost Live Invitation" : "Delete Deployment Request"}
+                          >
+                            <Trash2 size={15} />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -493,16 +551,16 @@ function DeploymentsPage() {
         )}
       </div>
 
-      {/* Send Live Link to Client Modal */}
+      {/* Send Congratulations to Client Modal */}
       {notifyModalData && (
         <Dialog open={!!notifyModalData} onOpenChange={() => setNotifyModalData(null)}>
           <DialogContent className="sm:max-w-lg bg-white rounded-2xl p-6">
             <DialogHeader>
               <DialogTitle className="font-serif text-xl text-[#201814] flex items-center gap-2">
-                <Send className="w-5 h-5 text-[#DCA963]" /> Send Live Link to Client
+                <Sparkles className="w-5 h-5 text-[#DCA963]" /> Send Congratulations to Client
               </DialogTitle>
               <DialogDescription className="text-xs text-black/60">
-                Share the official hosted link with the couple to send to their wedding guests.
+                Send congratulations and the official hosted link to the couple.
               </DialogDescription>
             </DialogHeader>
 
@@ -522,16 +580,20 @@ function DeploymentsPage() {
                 </div>
               </div>
 
-              {/* Ready to send announcement message */}
+              {/* Ready to send congratulations message */}
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-black/50 block mb-1.5">
-                  Ready-to-Send Announcement Message
+                  Congratulations Message for Client Portal
                 </label>
                 <textarea
-                  readOnly
-                  rows={5}
-                  value={`Dear ${notifyModalData.clientName},\n\nWe are delighted to share that your luxury wedding invitation for ${notifyModalData.coupleNames} is now LIVE!\n\nGuest Invitation Link: ${notifyModalData.liveUrl}\n\nYou and your guests can view the full invitation and submit RSVPs anytime.\n\nWarm regards,\nCandyInvito Studio`}
-                  className="w-full text-xs font-sans bg-[#FAF9F6] border border-black/10 rounded-xl p-3 outline-none select-all"
+                  rows={6}
+                  value={notifyModalData.customMessage}
+                  onChange={(e) =>
+                    setNotifyModalData((prev) =>
+                      prev ? { ...prev, customMessage: e.target.value } : null,
+                    )
+                  }
+                  className="w-full text-xs font-sans bg-[#FAF9F6] border border-black/10 rounded-xl p-3 outline-none focus:border-[#DCA963]"
                 />
               </div>
             </div>
@@ -544,20 +606,19 @@ function DeploymentsPage() {
               >
                 Close
               </Button>
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap justify-end">
                 <Button
                   onClick={() => {
-                    const msg = `Dear ${notifyModalData.clientName},\n\nYour wedding invitation for ${notifyModalData.coupleNames} is now LIVE!\n\nGuest Invitation Link: ${notifyModalData.liveUrl}\n\nWarm regards,\nCandyInvito Studio`;
-                    copyToClipboard(msg);
+                    copyToClipboard(notifyModalData.customMessage || "");
                   }}
-                  className="w-full sm:w-auto bg-[#201814] hover:bg-[#382B23] text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5"
+                  className="bg-[#201814] hover:bg-[#382B23] text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5"
                 >
                   <Copy size={13} /> Copy Message
                 </Button>
                 {notifyModalData.clientEmail && (
                   <a
-                    href={`mailto:${notifyModalData.clientEmail}?subject=${encodeURIComponent(`🎉 Your Wedding Invitation is Live! — CandyInvito`)}&body=${encodeURIComponent(`Dear ${notifyModalData.clientName},\n\nWe are delighted to share that your luxury wedding invitation for ${notifyModalData.coupleNames} is now LIVE!\n\nGuest Invitation Link: ${notifyModalData.liveUrl}\n\nYou and your guests can view the full invitation and submit RSVPs anytime.\n\nWarm regards,\nCandyInvito Studio`)}`}
-                    className="w-full sm:w-auto bg-[#DCA963] hover:bg-[#C99750] text-[#201814] font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+                    href={`mailto:${notifyModalData.clientEmail}?subject=${encodeURIComponent(`🎉 Congratulations! Your Wedding Invitation is Live! — CandyInvito`)}&body=${encodeURIComponent(notifyModalData.customMessage || "")}`}
+                    className="bg-[#DCA963] hover:bg-[#C99750] text-[#201814] font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors shadow-xs"
                   >
                     <Mail size={13} /> Open Email
                   </a>
