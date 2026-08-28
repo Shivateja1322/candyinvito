@@ -164,8 +164,9 @@ export const invitationRepository = {
   },
   create: async (userId: string, title: string, templateId: string): Promise<Invitation> => {
     const slug = crypto.randomUUID().split("-")[0];
+    const generatedId = crypto.randomUUID();
     const payload = {
-      id: crypto.randomUUID(),
+      id: generatedId,
       client_id: userId,
       couple_names: title,
       template_id: templateId,
@@ -173,20 +174,32 @@ export const invitationRepository = {
       content: {},
       status: "Draft",
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     };
     
     try {
       const { data, error } = await supabase.from("invitations").insert({
+        id: generatedId,
         client_id: userId,
         couple_names: title,
         template_id: templateId,
         slug,
         content: {},
-        status: "Draft"
+        status: "Draft",
       }).select().single();
-      if (!error && data) return normalizeInvitation(data);
-    } catch(e) {}
+      if (error) {
+        console.warn("Supabase insert invitation warning:", error);
+      }
+      if (!error && data) {
+        const normalized = normalizeInvitation(data);
+        const local = getLocalInvites();
+        local[slug] = normalized;
+        setLocalInvites(local);
+        return normalized;
+      }
+    } catch (e) {
+      console.warn("Supabase insert invitation exception:", e);
+    }
     
     // Fallback to local storage if DB fails
     const local = getLocalInvites();
@@ -211,17 +224,27 @@ export const invitationRepository = {
   },
   remove: async (invitationId: string): Promise<boolean> => {
     try {
-      await supabase.from("invitations").delete().eq("id", invitationId);
-    } catch(e) {}
-    
+      // 1. Delete dependent deployment requests
+      await supabase.from("deployment_requests").delete().eq("invitation_id", invitationId);
+      // 2. Delete dependent rsvps
+      await supabase.from("rsvps").delete().eq("invitation_id", invitationId);
+      // 3. Delete the invitation itself
+      const { error } = await supabase.from("invitations").delete().eq("id", invitationId);
+      if (error) {
+        console.error("Failed to delete invitation from Supabase:", error);
+      }
+    } catch (e) {
+      console.error("Error in invitation remove:", e);
+    }
+
     const local = getLocalInvites();
-    const slug = Object.keys(local).find(k => local[k].id === invitationId);
+    const slug = Object.keys(local).find((k) => local[k].id === invitationId);
     if (slug) {
       delete local[slug];
       setLocalInvites(local);
     }
     return true;
-  }
+  },
 };
 
 import { themeCapabilities } from "../../templates/TemplateRegistry";

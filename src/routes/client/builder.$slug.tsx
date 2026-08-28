@@ -26,7 +26,7 @@ import {
   ThemeSection,
   TemplateControl,
 } from "../../templates/TemplateRegistry";
-import { BuilderProvider } from "../../components/builder";
+import { BuilderProvider, EventIcon, AVAILABLE_EVENT_ICONS } from "../../components/builder";
 import { invitationRepository, deploymentRequestRepository } from "../../lib/repositories";
 import { getByPath, setByPath } from "../../lib/fieldPath";
 import { Invitation } from "../../lib/types";
@@ -303,19 +303,28 @@ function ClientBuilder() {
     if (!invitationRecord || !user) return;
     try {
       setSaveStatus("saving");
-      await saveToDb(invitationRecord as any);
+      await saveToDb({
+        ...invitationRecord,
+        status: "Published",
+      } as any);
       await deploymentRequestRepository.request(invitationRecord.id, user.id);
-      toast.success("Request Submitted ✓", { 
-        description: "Your invitation has been submitted for deployment. The CandyInvito team will review your request.",
+      await invitationRepository.update(invitationRecord.id, { status: "Published" });
+      setSaveStatus("saved");
+      toast.success("Deployment Request Submitted!", { 
+        description: "Your invitation is published and submitted to the admin for custom hosting.",
         duration: 5000 
       });
     } catch (err: any) {
-      if (err.message?.includes('violates row-level security')) {
-         toast.error("Your database doesn't have the deployment_requests table or policies set up.");
+      if (err.message?.includes("already pending")) {
+        toast.info("A deployment request is already pending review with the admin.");
+        setSaveStatus("saved");
+      } else if (err.message?.includes('violates row-level security')) {
+        toast.error("Your database doesn't have the deployment_requests table or policies set up.");
+        setSaveStatus("unsaved");
       } else {
-         toast.error(err?.message || "Failed to submit deployment request.");
+        toast.error(err?.message || "Failed to submit deployment request.");
+        setSaveStatus("unsaved");
       }
-      setSaveStatus("unsaved");
     }
   };
 
@@ -475,30 +484,62 @@ function ClientBuilder() {
                       
                       {/* Array Items Management */}
                       {section.isArray && (
-                        <div className="mb-4">
-                          {((getByPath(invitationRecord.content, section.arrayPath!) as any[]) || []).map((_, index) => (
-                            <div key={index} className="flex items-center justify-between p-2 mb-2 bg-white border border-black/5 rounded">
-                              <span className="text-xs font-bold text-black/50 uppercase">Item {index + 1}</span>
-                              <div className="flex items-center gap-2">
-                                <button onClick={() => removeArrayItem(section.arrayPath!, index)} className="p-1 text-black/40 hover:text-red-500">
-                                  <Trash2 size={14} />
-                                </button>
+                        <div className="mb-4 space-y-2">
+                          {((getByPath(invitationRecord.content, section.arrayPath!) as any[]) || []).map((item, index) => {
+                            const itemTitle = item.title || item.year || `Item ${index + 1}`;
+                            return (
+                              <div key={index} className="p-2.5 bg-white border border-black/5 rounded-lg shadow-xs">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-semibold text-[#201814] truncate max-w-[160px]">
+                                    {itemTitle}
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      onClick={() => removeArrayItem(section.arrayPath!, index)}
+                                      className="p-1 text-black/40 hover:text-red-500 rounded transition-colors"
+                                      title="Delete Item"
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {section.id === "events" && (
+                                  <div className="mt-2 pt-2 border-t border-black/5 flex items-center justify-between gap-2">
+                                    <label className="text-[10px] font-bold uppercase tracking-wider text-black/50 flex items-center gap-1.5">
+                                      <EventIcon name={item.icon || "sparkles"} className="w-3.5 h-3.5 text-[#DCA963]" />
+                                      Icon
+                                    </label>
+                                    <select
+                                      value={item.icon || "sparkles"}
+                                      onChange={(e) => updateData(`events[${index}].icon`, e.target.value)}
+                                      className="bg-[#F3F4F6] border border-black/10 rounded px-2 py-1 text-xs outline-none focus:border-[#DCA963] cursor-pointer"
+                                    >
+                                      {AVAILABLE_EVENT_ICONS.map((ico) => (
+                                        <option key={ico.value} value={ico.value}>
+                                          {ico.label}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                )}
                               </div>
-                            </div>
-                          ))}
-                          <button onClick={() => addArrayItem(section.arrayPath!, section.defaultItem || {})} className="w-full mt-2 py-2 border border-dashed border-[#DCA963]/50 text-[#DCA963] rounded text-xs font-bold uppercase tracking-widest hover:bg-[#DCA963]/10 transition-colors flex items-center justify-center gap-2">
-                              <Plus size={14} /> Add Item
-                            </button>
+                            );
+                          })}
+                          <button
+                            onClick={() => addArrayItem(section.arrayPath!, section.defaultItem || {})}
+                            className="w-full mt-2 py-2 border border-dashed border-[#DCA963]/50 text-[#DCA963] rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-[#DCA963]/10 transition-colors flex items-center justify-center gap-2"
+                          >
+                            <Plus size={14} /> Add Item
+                          </button>
                         </div>
                       )}
 
-                      {/* Advanced Controls */}
-                      {section.controls.length > 0 ? (
+                      {/* Non-array Advanced Controls */}
+                      {!section.isArray && section.controls.length > 0 && (
                         <div className="space-y-4">
-                          {section.controls.map(control => renderControl(control, control.id))}
+                          {section.controls.map((control) => renderControl(control, control.id))}
                         </div>
-                      ) : (
-                        <p className="text-[10px] text-black/40 uppercase tracking-widest text-center italic">Edit directly on canvas</p>
                       )}
                     </div>
                   )}

@@ -1,19 +1,17 @@
 import { useEffect } from "react";
-import { createFileRoute, Outlet, useNavigate, Navigate, Link, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, Link, useLocation } from "@tanstack/react-router";
 import { useAuth } from "../lib/auth-context";
 import { Button } from "../components/ui/button";
 import {
   LayoutDashboard,
   Users,
   Mail,
-  FileText,
-  Palette,
   Globe,
-  BarChart,
-  Settings,
+  BarChart3,
   LogOut,
   Sparkles,
-  ArrowRightToLine,
+  ExternalLink,
+  ShieldAlert,
 } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
@@ -25,8 +23,7 @@ const adminNavigation = [
   { name: "User Management", href: "/admin/users", icon: Users },
   { name: "Invitations", href: "/admin/invitations", icon: Mail },
   { name: "Deployments", href: "/admin/deployments", icon: Globe },
-  { name: "RSVPs", href: "/admin/rsvps", icon: FileText },
-  { name: "Analytics", href: "/admin/analytics", icon: BarChart },
+  { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
 ];
 
 function AdminLayout() {
@@ -41,147 +38,151 @@ function AdminLayout() {
 
   useEffect(() => {
     if (!isLoading && !user) {
-      navigate({ to: "/" });
+      navigate({ to: "/login" });
     }
   }, [user, isLoading, navigate]);
 
   if (isLoading || !user) {
-    return <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-[#141210] flex items-center justify-center text-[#DCA963] font-serif text-lg animate-pulse">
+        Loading CandyInvito Console...
+      </div>
+    );
   }
+
   if (user.role !== "ADMIN") {
     return (
-      <div className="min-h-screen bg-[#FDFBF7] flex flex-col items-center justify-center space-y-4">
-        <p className="font-display text-xl text-[#201814]">
-          Access Denied. You are logged in, but not authorized for this area.
-        </p>
-        <Button
-          className="bg-[#201814] text-[#FDFBF7] hover:bg-[#342820]"
-          onClick={() => navigate({ to: "/" })}
-        >
-          Go Home
-        </Button>
+      <div className="min-h-screen bg-[#141210] text-[#FAF9F6] flex flex-col items-center justify-center p-6 text-center">
+        <div className="max-w-md bg-white/5 border border-white/10 p-8 rounded-2xl backdrop-blur-md">
+          <ShieldAlert className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <h2 className="font-serif text-2xl mb-2 text-white">Administrator Access Required</h2>
+          <p className="text-white/60 text-sm mb-6">
+            Your account ({user.email}) is currently registered as a Client. Only platform administrators have access to this portal.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <Button
+              className="bg-[#DCA963] hover:bg-[#C99750] text-[#141210] font-bold rounded-xl"
+              onClick={() => navigate({ to: "/client" })}
+            >
+              Go to Client Portal
+            </Button>
+            <Button
+              variant="outline"
+              className="border-white/20 text-white hover:bg-white/10 rounded-xl"
+              onClick={handleSignOut}
+            >
+              Sign Out
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen w-full bg-[#FDFBF7] overflow-hidden text-[#201814]">
-      {/* Sidebar - Dark Luxury */}
-      <aside className="w-64 flex flex-col bg-[#201814] text-[#ece6dc] shrink-0 h-full border-r border-[#342820]">
-        <div className="p-8 pb-6">
-          <h1 className="font-display text-2xl font-medium tracking-wide">CandyInvito</h1>
-          <p className="text-[10px] tracking-widest uppercase text-white/50 mt-1 font-medium">
-            Studio Console
-          </p>
+    <div className="flex h-screen w-full bg-[#FAF9F6] overflow-hidden text-[#201814] font-sans">
+      {/* Sidebar - Sleek Luxury Charcoal & Gold */}
+      <aside className="w-64 flex flex-col bg-[#141210] text-[#EAE6DF] shrink-0 h-full border-r border-[#27231F] select-none">
+        {/* Brand Header */}
+        <div className="p-6 pb-5 border-b border-[#27231F]">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#DCA963] to-[#A87B3C] flex items-center justify-center text-[#141210] font-serif font-bold text-base shadow-sm">
+              C
+            </div>
+            <div>
+              <h1 className="font-serif text-lg font-bold tracking-tight text-white leading-none">
+                CandyInvito
+              </h1>
+              <p className="text-[9px] tracking-[0.25em] uppercase text-[#DCA963] font-bold mt-1">
+                Admin Console
+              </p>
+            </div>
+          </div>
         </div>
 
-        <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
+        {/* Navigation Menu */}
+        <nav className="flex-1 px-3 py-6 space-y-1.5 overflow-y-auto">
           {adminNavigation.map((item) => {
-            const isActive = location.pathname === item.href;
+            const isActive =
+              item.href === "/admin"
+                ? location.pathname === "/admin" || location.pathname === "/admin/"
+                : location.pathname.startsWith(item.href);
+
             return (
               <Link
                 key={item.name}
                 to={item.href}
-                className={`flex items-center justify-between px-4 py-2.5 rounded-md text-sm font-light transition-all ${
+                className={`flex items-center justify-between px-4 py-3 rounded-xl text-xs uppercase tracking-wider font-bold transition-all ${
                   isActive
-                    ? "bg-[#ece6dc] text-[#201814] font-medium shadow-sm"
+                    ? "bg-[#DCA963] text-[#141210] shadow-md font-extrabold"
                     : "text-white/60 hover:text-white hover:bg-white/5"
                 }`}
               >
-                <div className="flex items-center">
-                  <item.icon className="h-4 w-4 mr-3" strokeWidth={isActive ? 2 : 1.5} />
+                <div className="flex items-center gap-3">
+                  <item.icon className="h-4 w-4" strokeWidth={isActive ? 2.5 : 1.75} />
                   <span>{item.name}</span>
                 </div>
-                {item.badge && (
-                  <span
-                    className={`text-[10px] px-2 py-0.5 rounded-full ${isActive ? "bg-[#201814] text-[#ece6dc]" : "bg-white/10 text-white"}`}
-                  >
-                    {item.badge}
-                  </span>
-                )}
-                {isActive && !item.badge && (
-                  <div className="h-1.5 w-1.5 rounded-full bg-[#201814]"></div>
-                )}
+                {isActive && <div className="h-1.5 w-1.5 rounded-full bg-[#141210]" />}
               </Link>
             );
           })}
         </nav>
 
-        <div className="p-4 space-y-4">
-          {/* User Profile */}
-          <div className="flex items-center justify-between px-2 pt-2">
-            <div className="flex items-center">
-              <div className="h-8 w-8 rounded-full bg-amber-900/40 text-amber-500/80 flex items-center justify-center text-xs font-medium mr-3">
-                {user.avatarInitials}
+        {/* User Profile Footer */}
+        <div className="p-4 border-t border-[#27231F] bg-[#0E0C0B]">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className="h-9 w-9 rounded-xl bg-[#DCA963]/20 text-[#DCA963] border border-[#DCA963]/30 flex items-center justify-center text-xs font-bold shrink-0">
+                {user.avatarInitials || "AD"}
               </div>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium text-white/90">{user.name}</span>
-                <span className="text-[10px] text-white/40 uppercase tracking-widest">Owner</span>
+              <div className="flex flex-col truncate">
+                <span className="text-xs font-semibold text-white truncate">{user.name || "Administrator"}</span>
+                <span className="text-[9px] text-[#DCA963] uppercase tracking-widest font-bold">
+                  Super Admin
+                </span>
               </div>
             </div>
             <button
               onClick={handleSignOut}
-              className="text-white/40 hover:text-white transition-colors"
+              className="p-2 text-white/40 hover:text-red-400 hover:bg-white/5 rounded-lg transition-colors shrink-0"
               title="Sign Out"
             >
-              <ArrowRightToLine className="h-4 w-4" />
+              <LogOut className="h-4 w-4" />
             </button>
           </div>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-auto bg-[#FDFBF7] flex flex-col relative">
-        {/* Subtle noise texture or gradient could go here */}
-
-        {/* Header */}
-        <header className="sticky top-0 z-20 flex items-center justify-between px-8 py-5 bg-[#FDFBF7]/90 backdrop-blur-md">
-          <div className="relative w-96">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#201814]/40"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search clients, invitations, templates..."
-              className="w-full bg-white border border-[#201814]/10 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-[#201814]/30 placeholder:text-[#201814]/40 transition-shadow shadow-sm"
-            />
+      <main className="flex-1 overflow-auto bg-[#FAF9F6] flex flex-col relative">
+        {/* Top Floating App Bar */}
+        <header className="sticky top-0 z-20 flex items-center justify-between px-8 py-4 bg-[#FAF9F6]/90 backdrop-blur-md border-b border-black/5 shadow-xs">
+          <div className="flex items-center gap-4">
+            <span className="text-xs font-bold uppercase tracking-widest text-black/40">
+              Environment: <strong className="text-emerald-700 font-bold">Production Live</strong>
+            </span>
           </div>
-          <div className="flex items-center space-x-4">
-            <button className="h-10 w-10 rounded-full border border-[#201814]/10 bg-white flex items-center justify-center text-[#201814]/60 hover:text-[#201814] transition-colors shadow-sm relative">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                />
-              </svg>
-              <div className="absolute top-2.5 right-2.5 h-1.5 w-1.5 bg-red-400 rounded-full border border-white"></div>
-            </button>
-            <button className="bg-[#201814] text-white px-5 py-2.5 rounded-full text-sm font-medium flex items-center shadow-md hover:shadow-lg hover:bg-[#342820] transition-all">
-              <span className="text-lg leading-none mr-2">+</span> New invitation
-            </button>
+
+          <div className="flex items-center space-x-3">
+            <a
+              href="/client"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 bg-white border border-black/10 hover:border-black/20 text-black px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors shadow-xs"
+            >
+              <ExternalLink size={13} /> View Client Portal
+            </a>
+            <Link
+              to="/admin/deployments"
+              className="bg-[#141210] hover:bg-[#DCA963] hover:text-[#141210] text-white px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all shadow-sm"
+            >
+              Review Requests
+            </Link>
           </div>
         </header>
 
-        <div className="flex-1 px-8 pb-12 overflow-x-hidden">
+        {/* Route View */}
+        <div className="flex-1 p-8 max-w-7xl w-full mx-auto overflow-x-hidden">
           <Outlet />
         </div>
       </main>

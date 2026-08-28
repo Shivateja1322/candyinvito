@@ -71,12 +71,38 @@ BEGIN
   IF target_user_id = auth.uid() THEN
     RAISE EXCEPTION 'Cannot delete your own account';
   END IF;
+  -- Delete dependent child rows first before deleting auth.users
+  DELETE FROM public.deployment_requests WHERE requested_by = target_user_id;
+  DELETE FROM public.invitations WHERE client_id = target_user_id;
+  DELETE FROM public.users WHERE id = target_user_id;
   DELETE FROM auth.users WHERE id = target_user_id;
 END;
 $$;
 
 REVOKE ALL ON FUNCTION public.delete_user(UUID) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.delete_user(UUID) TO authenticated;
+
+-- 2c. admin_set_user_password() — used by Admin to directly set a password for any user
+CREATE OR REPLACE FUNCTION public.admin_set_user_password(target_user_id UUID, new_password TEXT)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'Access denied: caller is not an admin';
+  END IF;
+  
+  UPDATE auth.users
+  SET encrypted_password = extensions.crypt(new_password, extensions.gen_salt('bf')),
+      updated_at = NOW()
+  WHERE id = target_user_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.admin_set_user_password(UUID, TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.admin_set_user_password(UUID, TEXT) TO authenticated;
 
 -- ============================================================
 -- PART 3: Auto-create public.users row when auth user signs up

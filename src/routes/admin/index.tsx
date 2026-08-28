@@ -1,7 +1,7 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
-import { Users, FileText, Globe, Clock, ArrowUpRight, Activity } from "lucide-react";
+import { Users, FileText, Globe, Clock, ArrowUpRight, CheckCircle2, Shield, Activity, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { deploymentRequestRepository } from "../../lib/repositories";
@@ -20,178 +20,287 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [recentRequests, setRecentRequests] = useState<any[]>([]);
 
-  useEffect(() => {
-    async function loadStats() {
-      try {
-        const [
-          { count: clientCount },
-          { count: invCount },
-          { count: hostedCount },
-        ] = await Promise.all([
-          supabase.from("users").select("*", { count: "exact", head: true }).eq("role", "CLIENT"),
-          supabase.from("invitations").select("*", { count: "exact", head: true }),
-          supabase.from("deployment_requests").select("*", { count: "exact", head: true }).eq("status", "APPROVED"),
-        ]);
+  const loadStats = async () => {
+    try {
+      const [
+        { count: clientCount },
+        { count: invCount },
+        { count: hostedCount },
+      ] = await Promise.all([
+        supabase.from("users").select("*", { count: "exact", head: true }).eq("role", "CLIENT"),
+        supabase.from("invitations").select("*", { count: "exact", head: true }),
+        supabase.from("deployment_requests").select("*", { count: "exact", head: true }).eq("status", "HOSTED"),
+      ]);
 
-        const reqs = await deploymentRequestRepository.list();
-        const pendingCount = reqs.filter(r => r.status === "PENDING").length;
+      const reqs = await deploymentRequestRepository.list();
+      const pendingCount = reqs.filter((r) => r.status === "PENDING").length;
 
-        setStats({
-          clients: clientCount || 0,
-          invitations: invCount || 0,
-          pendingReqs: pendingCount,
-          hosted: hostedCount || 0,
-        });
-        
-        setRecentRequests(reqs.slice(0, 5));
-      } catch (err) {
-        console.error("Error loading stats:", err);
-      } finally {
-        setLoading(false);
-      }
+      setStats({
+        clients: clientCount || 0,
+        invitations: invCount || 0,
+        pendingReqs: pendingCount,
+        hosted: hostedCount || 0,
+      });
+
+      setRecentRequests(reqs.slice(0, 5));
+    } catch (err) {
+      console.error("Error loading stats:", err);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     loadStats();
+
+    // Enable realtime sync
+    const channel = supabase
+      .channel("admin-dashboard-sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "deployment_requests" }, () =>
+        loadStats(),
+      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "invitations" }, () =>
+        loadStats(),
+      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "users" }, () =>
+        loadStats(),
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const statCards = [
     {
-      title: "Total Clients",
+      title: "Registered Clients",
       value: loading ? "--" : stats.clients,
       icon: Users,
-      trend: "+2%",
-      subtitle: "vs last month",
+      trend: "Active couples",
       href: "/admin/users",
       highlight: false,
     },
     {
-      title: "Active Invitations",
+      title: "Total Invitations",
       value: loading ? "--" : stats.invitations,
       icon: FileText,
-      trend: "+12%",
-      subtitle: "vs last month",
+      trend: "Designs created",
       href: "/admin/invitations",
       highlight: false,
     },
     {
-      title: "Pending Deployments",
+      title: "Pending Reviews",
       value: loading ? "--" : stats.pendingReqs,
       icon: Clock,
       trend: stats.pendingReqs > 0 ? "Action Required" : "All clear",
-      subtitle: "Needs review",
       href: "/admin/deployments",
       highlight: stats.pendingReqs > 0,
     },
     {
-      title: "Approved / Hosted",
+      title: "Hosted & Live Sites",
       value: loading ? "--" : stats.hosted,
       icon: Globe,
-      trend: "+5%",
-      subtitle: "Active sites",
+      trend: "Publicly accessible",
       href: "/admin/deployments",
       highlight: false,
     },
   ];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <header className="pb-6 border-b border-[#201814]/5">
-        <h1 className="text-3xl font-display font-medium text-[#201814]">Dashboard</h1>
-        <p className="text-[#201814]/50 mt-1 font-light">Overview of your CandyInvito Studio performance.</p>
+    <div className="space-y-10 animate-fade-in font-sans">
+      <header className="pb-6 border-b border-[#201814]/10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <p className="text-[10px] tracking-[0.2em] uppercase text-[#201814]/50 font-bold mb-1">
+            Studio Overview
+          </p>
+          <h1 className="text-3xl font-display font-medium tracking-tight text-[#201814]">
+            Executive Dashboard
+          </h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full text-xs font-bold uppercase tracking-wider">
+            <CheckCircle2 size={12} /> Database Connected
+          </span>
+        </div>
       </header>
 
-      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+      {/* Metric Cards Grid */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {statCards.map((stat) => (
-          <Link key={stat.title} to={stat.href} className={`rounded-[1.25rem] border ${stat.highlight ? 'border-amber-300 bg-amber-50' : 'border-[#201814]/5 bg-white'} p-6 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] flex flex-col justify-between transition-transform hover:-translate-y-1`}>
+          <Link
+            key={stat.title}
+            to={stat.href}
+            className={`rounded-2xl border p-6 shadow-xs flex flex-col justify-between transition-all hover:shadow-md hover:-translate-y-0.5 ${
+              stat.highlight
+                ? "border-amber-400/60 bg-amber-50/50"
+                : "border-black/10 bg-white"
+            }`}
+          >
             <div className="flex justify-between items-start mb-4">
-              <span className={`text-sm font-medium ${stat.highlight ? 'text-amber-900' : 'text-[#201814]/70'}`}>{stat.title}</span>
-              <div className={`p-2 rounded-lg ${stat.highlight ? 'bg-amber-200 text-amber-700' : 'bg-[#FDFBF7] text-[#201814]/40 border border-[#201814]/5'}`}>
-                <stat.icon className="h-4 w-4" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-black/60">
+                {stat.title}
+              </span>
+              <div
+                className={`p-2.5 rounded-xl ${
+                  stat.highlight
+                    ? "bg-amber-500 text-white"
+                    : "bg-[#201814]/5 text-[#201814]"
+                }`}
+              >
+                <stat.icon size={18} />
               </div>
             </div>
             <div>
-              <div className={`text-3xl font-display font-medium leading-none mb-3 ${stat.highlight ? 'text-amber-900' : 'text-[#201814]'}`}>
+              <div className="text-4xl font-serif font-bold text-[#201814] mb-2">
                 {stat.value}
               </div>
-              <div className="flex items-center text-xs">
-                <span className={`inline-flex items-center px-1.5 py-0.5 rounded-sm mr-2 font-medium ${stat.highlight ? 'bg-amber-200 text-amber-800' : 'bg-emerald-100/60 text-emerald-700'}`}>
-                  {stat.trend}
-                </span>
-                <span className={stat.highlight ? 'text-amber-700' : 'text-[#201814]/50'}>{stat.subtitle}</span>
+              <div className="text-xs font-medium text-black/50">
+                {stat.trend}
               </div>
             </div>
           </Link>
         ))}
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-3">
-        <div className="lg:col-span-2 rounded-[1.25rem] border border-[#201814]/5 bg-white p-6 shadow-sm flex flex-col">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-display font-medium text-[#201814]">Recent Deployment Requests</h3>
-            <Link to="/admin/deployments" className="text-xs text-[#201814]/50 hover:text-[#201814] transition-colors flex items-center">
-              View all <ArrowUpRight className="ml-1 h-3 w-3" />
+      {/* Main Content Sections */}
+      <div className="grid gap-8 lg:grid-cols-3">
+        {/* Recent Deployment Requests */}
+        <div className="lg:col-span-2 rounded-2xl border border-black/10 bg-white p-6 shadow-sm flex flex-col">
+          <div className="flex justify-between items-center mb-6 pb-3 border-b border-black/5">
+            <h3 className="text-lg font-serif font-medium text-[#201814]">
+              Recent Deployment Activity
+            </h3>
+            <Link
+              to="/admin/deployments"
+              className="text-xs font-bold uppercase tracking-wider text-[#DCA963] hover:text-[#201814] transition-colors flex items-center gap-1"
+            >
+              View all <ArrowUpRight size={13} />
             </Link>
           </div>
-          
+
           <div className="flex-1 overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-[#201814]/5">
-                  <th className="px-4 py-3 text-[10px] font-semibold tracking-widest uppercase text-[#201814]/40">Date</th>
-                  <th className="px-4 py-3 text-[10px] font-semibold tracking-widest uppercase text-[#201814]/40">Client</th>
-                  <th className="px-4 py-3 text-[10px] font-semibold tracking-widest uppercase text-[#201814]/40">Status</th>
+                <tr className="border-b border-black/5 text-[10px] uppercase font-bold tracking-widest text-black/40">
+                  <th className="px-4 py-3">Date</th>
+                  <th className="px-4 py-3">Client Request</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#201814]/5">
-                {recentRequests.map(req => (
-                  <tr key={req.id} className="hover:bg-[#FDFBF7]/50">
-                    <td className="px-4 py-3 text-xs font-medium text-[#201814]">{new Date(req.created_at).toLocaleDateString()}</td>
-                    <td className="px-4 py-3 text-xs text-[#201814]/60 font-mono">{req.requested_by.substring(0,8)}...</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase ${req.status === 'PENDING' ? 'bg-amber-100 text-amber-700' : req.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+              <tbody className="divide-y divide-black/5">
+                {recentRequests.map((req) => (
+                  <tr key={req.id} className="hover:bg-[#FAF9F6]/50 transition-colors">
+                    <td className="px-4 py-3.5 text-xs font-medium text-[#201814]">
+                      {new Date(req.created_at).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </td>
+                    <td className="px-4 py-3.5 text-xs text-black/70 font-mono">
+                      {req.requested_by.substring(0, 10)}...
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          req.status === "PENDING"
+                            ? "bg-amber-100 text-amber-800"
+                            : req.status === "APPROVED"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : req.status === "HOSTED"
+                                ? "bg-indigo-100 text-indigo-800"
+                                : "bg-rose-100 text-rose-800"
+                        }`}
+                      >
                         {req.status}
                       </span>
+                    </td>
+                    <td className="px-4 py-3.5 text-right">
+                      <Link
+                        to="/admin/deployments"
+                        className="text-xs font-bold uppercase tracking-wider text-[#201814] hover:text-[#DCA963]"
+                      >
+                        Review
+                      </Link>
                     </td>
                   </tr>
                 ))}
                 {recentRequests.length === 0 && !loading && (
-                  <tr><td colSpan={3} className="py-8 text-center text-xs text-[#201814]/40 italic">No recent requests.</td></tr>
+                  <tr>
+                    <td colSpan={4} className="py-12 text-center text-xs text-black/40 italic">
+                      No recent deployment activity.
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>
           </div>
         </div>
 
-        <div className="rounded-[1.25rem] border border-[#201814]/5 bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-display font-medium text-[#201814] mb-6">System Activity</h3>
-          <div className="space-y-5">
-            <div className="flex">
-              <div className="mt-1 mr-4 flex flex-col items-center">
-                <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-              </div>
-              <div>
-                <p className="text-xs text-[#201814]/80 leading-relaxed">
-                  <span className="font-semibold text-[#201814]">System</span> Live connection established to database
-                </p>
-                <p className="text-[10px] text-[#201814]/40 mt-1">Operational</p>
-              </div>
-            </div>
-            {stats.pendingReqs > 0 && (
-              <div className="flex">
-                <div className="mt-1 mr-4 flex flex-col items-center">
-                  <div className="h-2 w-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)] animate-pulse"></div>
+        {/* Studio Quick Actions */}
+        <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm space-y-6">
+          <h3 className="text-lg font-serif font-medium text-[#201814] pb-3 border-b border-black/5">
+            Quick Actions
+          </h3>
+
+          <div className="space-y-3">
+            <Link
+              to="/admin/users"
+              className="flex items-center justify-between p-4 rounded-xl border border-black/5 hover:border-[#DCA963] hover:bg-[#FAF9F6] transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#201814]/5 text-[#201814] rounded-lg group-hover:bg-[#DCA963] group-hover:text-white transition-colors">
+                  <Users size={16} />
                 </div>
                 <div>
-                  <p className="text-xs text-[#201814]/80 leading-relaxed">
-                    <span className="font-semibold text-[#201814]">Action Required</span> You have pending deployment requests
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#201814]">
+                    Add Client Account
                   </p>
-                  <p className="text-[10px] text-[#201814]/40 mt-1">Pending review</p>
+                  <p className="text-[11px] text-black/50">Register couples & assign roles</p>
                 </div>
               </div>
-            )}
+              <ArrowUpRight size={14} className="text-black/30 group-hover:text-[#201814]" />
+            </Link>
+
+            <Link
+              to="/admin/invitations"
+              className="flex items-center justify-between p-4 rounded-xl border border-black/5 hover:border-[#DCA963] hover:bg-[#FAF9F6] transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#201814]/5 text-[#201814] rounded-lg group-hover:bg-[#DCA963] group-hover:text-white transition-colors">
+                  <FileText size={16} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#201814]">
+                    Manage Invitations
+                  </p>
+                  <p className="text-[11px] text-black/50">Preview designs and live registry</p>
+                </div>
+              </div>
+              <ArrowUpRight size={14} className="text-black/30 group-hover:text-[#201814]" />
+            </Link>
+
+            <Link
+              to="/admin/analytics"
+              className="flex items-center justify-between p-4 rounded-xl border border-black/5 hover:border-[#DCA963] hover:bg-[#FAF9F6] transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#201814]/5 text-[#201814] rounded-lg group-hover:bg-[#DCA963] group-hover:text-white transition-colors">
+                  <Activity size={16} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#201814]">
+                    View Live Analytics
+                  </p>
+                  <p className="text-[11px] text-black/50">Response counts & system metrics</p>
+                </div>
+              </div>
+              <ArrowUpRight size={14} className="text-black/30 group-hover:text-[#201814]" />
+            </Link>
           </div>
         </div>
       </div>
     </div>
   );
 }
-

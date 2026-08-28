@@ -1,7 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
-import { Loader2 } from "lucide-react";
+import { useAuth } from "../lib/auth-context";
+import { deploymentRequestRepository, invitationRepository } from "../lib/repositories";
+import { Loader2, ArrowLeft, UploadCloud, CheckCircle2, Globe, Clock } from "lucide-react";
+import { toast } from "sonner";
 import { TemplateRenderer } from "../templates/TemplateRegistry";
 
 export const Route = createFileRoute("/i/$slug")({
@@ -32,64 +35,118 @@ export const Route = createFileRoute("/i/$slug")({
 
 function InvitationRenderer() {
   const { slug } = Route.useParams();
+  const { user } = useAuth();
   const [invitation, setInvitation] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [deploymentStatus, setDeploymentStatus] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchInvitation = async () => {
+  const isPreviewMode =
+    typeof window !== "undefined" &&
+    (window.location.search.includes("mode=preview") ||
+      window.location.search.includes("mode=builder"));
 
-      try {
-        const { data: inv, error } = await supabase
-          .from("invitations")
-          .select("*")
-          .eq("slug", slug)
-          .single();
+  const fetchInvitation = async () => {
+    try {
+      const { data: inv, error: fetchErr } = await supabase
+        .from("invitations")
+        .select("*")
+        .eq("slug", slug)
+        .maybeSingle();
 
-        if (error || !inv) {
-          setError("404");
-          return;
-        }
-        
-        // Is it being previewed by admin/client? 
-        const urlParams = new URLSearchParams(window.location.search);
-        const mode = urlParams.get('mode');
-        if (mode !== 'preview') {
-          // Check if HOSTED via deployment_requests (the primary hosting mechanism)
-          const { data: req } = await supabase.from("deployment_requests").select("*").eq("invitation_id", inv.id).eq("status", "HOSTED").maybeSingle();
-          const invIsPublished = inv.status === "Published" || inv.status === "PUBLISHED";
-          if (!req && !invIsPublished) {
-             setError("UNPUBLISHED");
-             return;
-          }
-          if (req && req.expires_at && new Date(req.expires_at) < new Date()) {
-             setError("EXPIRED");
-             return;
-          }
-        }
+      if (fetchErr) {
+        console.error("Supabase fetch invitation error:", fetchErr);
+      }
 
+      if (inv) {
         setInvitation(inv);
 
-      } catch (err) {
+        // Fetch deployment request status if any
+        try {
+          const { data: dep } = await supabase
+            .from("deployment_requests")
+            .select("status")
+            .eq("invitation_id", inv.id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (dep) {
+            setDeploymentStatus(dep.status);
+          }
+        } catch {}
 
-        // Fallback to local storage for local previews!
-        const localInvites = JSON.parse(localStorage.getItem("local_invitations") || "{}");
-        if (localInvites[slug]) {
-          setInvitation(localInvites[slug]);
-        } else {
-          setError("Invitation not found");
-        }
+        return;
       }
-    };
 
+      // Check local storage fallback
+      const localInvites = JSON.parse(localStorage.getItem("local_invitations") || "{}");
+      if (localInvites[slug]) {
+        setInvitation(localInvites[slug]);
+        return;
+      }
+
+      setError("404");
+    } catch (err) {
+      console.error("Fetch error:", err);
+      const localInvites = JSON.parse(localStorage.getItem("local_invitations") || "{}");
+      if (localInvites[slug]) {
+        setInvitation(localInvites[slug]);
+      } else {
+        setError("404");
+      }
+    }
+  };
+
+  useEffect(() => {
     fetchInvitation();
   }, [slug]);
 
+  const handlePublish = async () => {
+    if (!invitation) return;
+    setIsPublishing(true);
+    try {
+      const userId = user?.id || invitation.client_id;
+      if (!userId) {
+        toast.error("Please log in to publish your invitation.");
+        return;
+      }
+
+      // 1. Submit deployment request
+      await deploymentRequestRepository.request(invitation.id, userId);
+
+      // 2. Update invitation status to Published
+      await invitationRepository.update(invitation.id, { status: "Published" });
+
+      setDeploymentStatus("PENDING");
+      setInvitation((prev: any) => ({ ...prev, status: "Published" }));
+      toast.success("Deployment requested! Your invitation has been submitted for admin approval.");
+    } catch (err: any) {
+      if (err.message?.includes("already pending")) {
+        toast.info("A deployment request is already pending review with the admin.");
+        setDeploymentStatus("PENDING");
+      } else {
+        toast.error(err.message || "Failed to submit deployment request.");
+      }
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
   if (error) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center font-display">
-        <div className="text-center">
-          <h1 className="text-2xl mb-2">404</h1>
-          <p className="text-white/50 tracking-widest uppercase text-xs">Invitation Not Found</p>
+      <div className="min-h-screen bg-[#201814] text-[#FAF9F6] flex flex-col items-center justify-center font-sans p-6 text-center">
+        <div className="max-w-md bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-md">
+          <Globe className="w-12 h-12 text-[#DCA963] mx-auto mb-4" />
+          <h1 className="text-3xl font-display font-medium mb-2">Invitation Not Found</h1>
+          <p className="text-white/60 text-sm mb-6">
+            The link you followed may be invalid or the invitation is still being prepared.
+          </p>
+          <a
+            href="/"
+            className="inline-block bg-[#DCA963] text-[#201814] font-bold px-6 py-2.5 rounded-full text-xs uppercase tracking-widest hover:bg-[#C99750] transition-colors"
+          >
+            Go Home
+          </a>
         </div>
       </div>
     );
@@ -97,39 +154,94 @@ function InvitationRenderer() {
 
   if (!invitation) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-white/50" />
+      <div className="min-h-screen bg-[#201814] text-[#FAF9F6] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-[#DCA963]" />
       </div>
     );
   }
 
-  const isBuilderMode =
-    typeof window !== "undefined" && window.location.search.includes("mode=builder");
+  const isPublished =
+    invitation.status === "Published" ||
+    invitation.status === "PUBLISHED" ||
+    deploymentStatus === "HOSTED" ||
+    deploymentStatus === "APPROVED";
 
-  // Allow previewing local drafts or builder mode
-  // DB status is 'Published' (per CHECK constraint in schema)
-  const isPublished = invitation.status === "Published" || invitation.status === "PUBLISHED";
-  if (!invitation.client_id && !isPublished) {
-    // If there's no client_id, it's likely a local draft. We let them see it!
-  } else if (!isPublished && !isBuilderMode) {
+  // If not published and NOT in preview mode, show friendly unpublished status
+  if (!isPublished && !isPreviewMode) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center font-display">
-        <div className="text-center space-y-4">
-          <h1 className="text-3xl text-amber-500">{invitation.couple_names}</h1>
-          <p className="text-white/50 tracking-widest uppercase text-xs">
-            This invitation is not yet published
+      <div className="min-h-screen bg-[#201814] text-[#FAF9F6] flex flex-col items-center justify-center font-sans p-6 text-center">
+        <div className="max-w-md bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-md">
+          <Clock className="w-12 h-12 text-amber-400 mx-auto mb-4" />
+          <h1 className="text-3xl font-display font-medium text-amber-300 mb-2">
+            {invitation.couple_names || "Wedding Invitation"}
+          </h1>
+          <p className="text-white/70 text-sm mb-6">
+            This invitation is currently in preparation and has not yet been published for guests.
           </p>
+          {user && (
+            <Link
+              to={`/client/builder/${invitation.slug}`}
+              className="inline-block bg-[#DCA963] text-[#201814] font-bold px-6 py-2.5 rounded-full text-xs uppercase tracking-widest hover:bg-[#C99750] transition-colors"
+            >
+              Open in Studio Builder
+            </Link>
+          )}
         </div>
       </div>
     );
   }
 
-  // --- Dynamic Template Loading ---
-  // In a full implementation, we would lazy load the specific template component based on invitation.template_id
-  // e.g. if template_id === 'luxurious-1', render <LuxuriousTemplate data={invitation} />
-
   return (
-    <div className="min-h-screen w-full">
+    <div className="min-h-screen w-full relative">
+      {/* Floating Preview & Publish Banner (when in preview mode or for owner/admin) */}
+      {isPreviewMode && (
+        <header className="sticky top-0 z-50 bg-[#201814]/95 text-[#FAF9F6] backdrop-blur-md px-6 py-3 border-b border-white/10 flex items-center justify-between shadow-lg">
+          <div className="flex items-center gap-3">
+            <Link
+              to={`/client/builder/${invitation.slug}`}
+              className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#DCA963] hover:text-white transition-colors"
+            >
+              <ArrowLeft size={14} /> Back to Editor
+            </Link>
+            <div className="h-4 w-px bg-white/20 hidden sm:block" />
+            <div className="hidden sm:flex items-center gap-2 text-xs text-white/70">
+              <span>Preview Mode:</span>
+              <span className="font-semibold text-white">{invitation.couple_names || "Wedding Invitation"}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {deploymentStatus === "HOSTED" ? (
+              <span className="flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                <CheckCircle2 size={12} /> Hosted & Live
+              </span>
+            ) : deploymentStatus === "PENDING" ? (
+              <span className="flex items-center gap-1.5 bg-blue-500/20 text-blue-300 border border-blue-500/30 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                <Clock size={12} /> Approval Pending
+              </span>
+            ) : deploymentStatus === "APPROVED" ? (
+              <span className="flex items-center gap-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                <CheckCircle2 size={12} /> Approved
+              </span>
+            ) : (
+              <button
+                onClick={handlePublish}
+                disabled={isPublishing}
+                className="flex items-center gap-2 bg-[#DCA963] hover:bg-[#C99750] text-[#201814] font-bold px-4 py-1.5 rounded-full text-xs uppercase tracking-widest transition-colors shadow-sm disabled:opacity-50"
+              >
+                {isPublishing ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <UploadCloud size={14} />
+                )}
+                {isPublishing ? "Requesting..." : "Publish / Request Hosting"}
+              </button>
+            )}
+          </div>
+        </header>
+      )}
+
+      {/* Render Selected Theme */}
       <TemplateRenderer
         templateId={invitation.template_id}
         data={invitation.content || {}}
