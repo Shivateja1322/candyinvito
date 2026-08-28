@@ -6,17 +6,22 @@ const serverIndex = path.resolve(".vercel/output/functions/__server.func/index.m
 if (fs.existsSync(serverIndex)) {
   let content = fs.readFileSync(serverIndex, "utf8");
   
-  // Fix Nitro upstream bug where Object.defineProperty(req.socket, "remoteAddress", ...)
-  // crashes with "TypeError: Cannot redefine property: remoteAddress" on reused sockets / keep-alive.
-  const target = 'Object.defineProperty(req.socket, "remoteAddress", { get() {';
-  if (content.includes(target)) {
+  // Robust single-block regex replacement that works regardless of line endings (\r\n vs \n) or minification
+  const socketDefineRegex = /let ip;\s*Object\.defineProperty\(req\.socket,\s*["']remoteAddress["'],\s*\{\s*get\(\)\s*\{[\s\S]*?\}\s*\}\);/;
+  
+  if (socketDefineRegex.test(content)) {
     content = content.replace(
-      target,
-      'try { Object.defineProperty(req.socket, "remoteAddress", { configurable: true, get() {'
-    );
-    content = content.replace(
-      'return ip ??= h?.split?.(",").shift()?.trim();\n\t} });',
-      'return ip ??= h?.split?.(",").shift()?.trim();\n\t} }); } catch {}'
+      socketDefineRegex,
+      `let ip;
+	try {
+		Object.defineProperty(req.socket, "remoteAddress", {
+			configurable: true,
+			get() {
+				const h = req.headers["x-forwarded-for"];
+				return ip ??= h?.split?.(",").shift()?.trim();
+			}
+		});
+	} catch {}`
     );
     fs.writeFileSync(serverIndex, content);
     console.log("[patch-vercel] Successfully patched remoteAddress socket property definition");
