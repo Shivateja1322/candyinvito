@@ -245,11 +245,37 @@ function ClientDashboard() {
                       )}
                       
                       {req && req.status === "HOSTED" && (
-                        <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3 mb-6 max-w-lg flex flex-col gap-1">
-                          <p className="text-xs font-bold text-indigo-800 uppercase tracking-widest">Hosting Details</p>
-                          {req.hosted_at && <p className="text-xs text-indigo-700">Hosted: {new Date(req.hosted_at).toLocaleString()}</p>}
-                          {req.expires_at && <p className="text-xs text-indigo-700">Expires: {new Date(req.expires_at).toLocaleString()}</p>}
-                          <p className="text-xs text-indigo-700 font-medium">Link: <a href={`/invite/${invitation.slug}`} target="_blank" className="underline">{window.location.origin}/invite/{invitation.slug}</a></p>
+                        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-2xl p-5 mb-6 max-w-xl flex flex-col gap-2 shadow-xs">
+                          <div className="flex items-center gap-2 text-indigo-900">
+                            <Sparkles className="w-4 h-4 text-[#DCA963]" />
+                            <p className="text-xs font-bold uppercase tracking-widest">
+                              Your Wedding Invitation is Live!
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 bg-white/80 border border-indigo-100 rounded-xl p-2.5">
+                            <span className="text-xs font-mono text-indigo-900 font-semibold truncate flex-1">
+                              {publicUrl}
+                            </span>
+                            <button
+                              onClick={() => copyToClipboard(publicUrl)}
+                              className="bg-[#201814] text-white hover:bg-[#DCA963] hover:text-[#201814] px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors shrink-0 flex items-center gap-1"
+                            >
+                              <Copy size={12} /> Copy
+                            </button>
+                            <a
+                              href={publicUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors shrink-0 flex items-center gap-1"
+                            >
+                              <ExternalLink size={12} /> Open
+                            </a>
+                          </div>
+                          {req.expires_at && (
+                            <p className="text-[11px] text-indigo-700 font-medium">
+                              Active & Hosted until: {new Date(req.expires_at).toLocaleDateString()}
+                            </p>
+                          )}
                         </div>
                       )}
 

@@ -16,7 +16,20 @@ import {
   Copy,
   ExternalLink,
   Calendar,
+  Send,
+  Mail,
+  MessageSquare,
+  Sparkles,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../components/ui/dialog";
+import { Button } from "../../components/ui/button";
 import { DeploymentRequest, Invitation } from "../../lib/types";
 
 export const Route = createFileRoute("/admin/deployments")({
@@ -25,7 +38,9 @@ export const Route = createFileRoute("/admin/deployments")({
 
 function DeploymentsPage() {
   const { user } = useAuth();
-  const [requests, setRequests] = useState<(DeploymentRequest & { invitation?: Invitation })[]>([]);
+  const [requests, setRequests] = useState<
+    (DeploymentRequest & { invitation?: Invitation; clientEmail?: string; clientName?: string })[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
@@ -34,16 +49,36 @@ function DeploymentsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
 
+  // Client notification modal state
+  const [notifyModalData, setNotifyModalData] = useState<{
+    clientEmail: string;
+    clientName: string;
+    coupleNames: string;
+    liveUrl: string;
+  } | null>(null);
+
   const fetchRequests = async () => {
     try {
       setLoading(true);
-      const data = await deploymentRequestRepository.list();
+      const [data, usersRes] = await Promise.all([
+        deploymentRequestRepository.list(),
+        supabase.from("users").select("id, email, name"),
+      ]);
+
+      const userMap = new Map<string, { email: string; name: string }>();
+      (usersRes.data || []).forEach((u) => userMap.set(u.id, { email: u.email, name: u.name }));
 
       const enriched = await Promise.all(
         data.map(async (req) => {
           try {
             const inv = await invitationRepository.get(req.invitation_id);
-            return { ...req, invitation: inv || undefined };
+            const clientInfo = userMap.get(req.requested_by);
+            return {
+              ...req,
+              invitation: inv || undefined,
+              clientEmail: clientInfo?.email || "",
+              clientName: clientInfo?.name || "",
+            };
           } catch {
             return req;
           }
@@ -84,7 +119,11 @@ function DeploymentsPage() {
     }
   };
 
-  const handleHost = async (reqId: string, invitationId?: string) => {
+  const handleHost = async (
+    reqId: string,
+    invitationId?: string,
+    reqItem?: any,
+  ) => {
     if (!window.confirm(`Host this invitation for ${hostDuration} days and make it live?`)) return;
     try {
       const hostedAt = new Date();
@@ -106,6 +145,15 @@ function DeploymentsPage() {
       toast.success("Invitation is now Hosted and Live for guests!");
       setHostId(null);
       fetchRequests();
+
+      // Open notification dialog to easily send live link to the client
+      const liveUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/i/${reqItem?.invitation?.slug || ""}`;
+      setNotifyModalData({
+        clientEmail: reqItem?.clientEmail || "",
+        clientName: reqItem?.clientName || "Valued Client",
+        coupleNames: reqItem?.invitation?.couple_names || reqItem?.invitation?.title || "Wedding",
+        liveUrl,
+      });
     } catch (err: any) {
       toast.error(err.message || "Failed to host invitation.");
     }
@@ -135,7 +183,7 @@ function DeploymentsPage() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success("Live link copied to clipboard!");
+    toast.success("Copied to clipboard!");
   };
 
   const filteredRequests = requests.filter((req) => {
@@ -145,6 +193,8 @@ function DeploymentsPage() {
       return (
         req.id.toLowerCase().includes(term) ||
         req.requested_by.toLowerCase().includes(term) ||
+        (req.clientEmail || "").toLowerCase().includes(term) ||
+        (req.clientName || "").toLowerCase().includes(term) ||
         (req.invitation?.couple_names ?? "").toLowerCase().includes(term) ||
         (req.invitation?.title ?? "").toLowerCase().includes(term) ||
         (req.invitation?.slug ?? "").toLowerCase().includes(term)
@@ -175,7 +225,7 @@ function DeploymentsPage() {
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#201814]/40" />
           <input
             type="text"
-            placeholder="Search by client ID, couple title, or slug..."
+            placeholder="Search by client email, couple title, or slug..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full bg-white border border-[#201814]/10 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-[#DCA963] shadow-xs"
@@ -217,7 +267,7 @@ function DeploymentsPage() {
                     Request Date
                   </th>
                   <th className="px-6 py-4 text-[10px] font-bold tracking-widest uppercase text-[#201814]/50">
-                    Invitation & Slug
+                    Client & Couple
                   </th>
                   <th className="px-6 py-4 text-[10px] font-bold tracking-widest uppercase text-[#201814]/50">
                     Status & Hosting Info
@@ -246,18 +296,17 @@ function DeploymentsPage() {
                       </td>
 
                       <td className="px-6 py-4">
-                        {req.invitation ? (
-                          <div className="flex flex-col">
-                            <span className="text-sm font-semibold text-[#201814]">
-                              {req.invitation.couple_names || req.invitation.title || "Untitled Invitation"}
-                            </span>
-                            <span className="text-xs text-[#201814]/50 font-mono">
-                              /i/{req.invitation.slug}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-black/40 italic">Unknown Invitation ({req.invitation_id.substring(0, 8)}...)</span>
-                        )}
+                        <div className="flex flex-col">
+                          <span className="text-sm font-semibold text-[#201814]">
+                            {req.invitation?.couple_names || req.invitation?.title || "Untitled Invitation"}
+                          </span>
+                          <span className="text-xs text-[#201814]/70">
+                            Client: <strong>{req.clientName || "Client"}</strong> ({req.clientEmail || req.requested_by.substring(0, 8)})
+                          </span>
+                          <span className="text-xs text-[#201814]/50 font-mono">
+                            /i/{req.invitation?.slug}
+                          </span>
+                        </div>
                       </td>
 
                       <td className="px-6 py-4">
@@ -376,7 +425,7 @@ function DeploymentsPage() {
                             </div>
                           )}
 
-                          {/* Action when APPROVED -> Host Modal / Form */}
+                          {/* Action when APPROVED -> Host Form */}
                           {req.status === "APPROVED" && hostId !== req.id && (
                             <button
                               onClick={() => setHostId(req.id)}
@@ -405,7 +454,7 @@ function DeploymentsPage() {
                                 Cancel
                               </button>
                               <button
-                                onClick={() => handleHost(req.id, req.invitation_id)}
+                                onClick={() => handleHost(req.id, req.invitation_id, req)}
                                 className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1 rounded-lg"
                               >
                                 Confirm Host
@@ -413,16 +462,25 @@ function DeploymentsPage() {
                             </div>
                           )}
 
-                          {/* Action when HOSTED */}
-                          {req.status === "HOSTED" && liveUrl && (
-                            <a
-                              href={liveUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors"
+                          {/* Action when HOSTED -> Send to Client button */}
+                          {req.status === "HOSTED" && (
+                            <button
+                              onClick={() =>
+                                setNotifyModalData({
+                                  clientEmail: req.clientEmail || "",
+                                  clientName: req.clientName || "Valued Client",
+                                  coupleNames:
+                                    req.invitation?.couple_names ||
+                                    req.invitation?.title ||
+                                    "Wedding",
+                                  liveUrl,
+                                })
+                              }
+                              className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#201814] bg-[#DCA963]/20 hover:bg-[#DCA963] hover:text-[#201814] px-3 py-1.5 rounded-lg transition-colors"
+                              title="Send or share live invitation link to client"
                             >
-                              <ExternalLink size={13} /> View Live
-                            </a>
+                              <Send size={12} /> Send to Client
+                            </button>
                           )}
                         </div>
                       </td>
@@ -434,6 +492,81 @@ function DeploymentsPage() {
           </div>
         )}
       </div>
+
+      {/* Send Live Link to Client Modal */}
+      {notifyModalData && (
+        <Dialog open={!!notifyModalData} onOpenChange={() => setNotifyModalData(null)}>
+          <DialogContent className="sm:max-w-lg bg-white rounded-2xl p-6">
+            <DialogHeader>
+              <DialogTitle className="font-serif text-xl text-[#201814] flex items-center gap-2">
+                <Send className="w-5 h-5 text-[#DCA963]" /> Send Live Link to Client
+              </DialogTitle>
+              <DialogDescription className="text-xs text-black/60">
+                Share the official hosted link with the couple to send to their wedding guests.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-3">
+              <div className="bg-[#FAF9F6] p-4 rounded-xl border border-black/5 space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span className="text-black/50 uppercase font-bold tracking-wider">Client Email:</span>
+                  <span className="font-semibold text-[#201814]">{notifyModalData.clientEmail || "Not specified"}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-black/50 uppercase font-bold tracking-wider">Couple Title:</span>
+                  <span className="font-semibold text-[#201814]">{notifyModalData.coupleNames}</span>
+                </div>
+                <div className="flex flex-col gap-1 text-xs pt-1 border-t border-black/5">
+                  <span className="text-black/50 uppercase font-bold tracking-wider">Hosted Invitation URL:</span>
+                  <span className="font-mono font-semibold text-indigo-900 break-all">{notifyModalData.liveUrl}</span>
+                </div>
+              </div>
+
+              {/* Ready to send announcement message */}
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wider text-black/50 block mb-1.5">
+                  Ready-to-Send Announcement Message
+                </label>
+                <textarea
+                  readOnly
+                  rows={5}
+                  value={`Dear ${notifyModalData.clientName},\n\nWe are delighted to share that your luxury wedding invitation for ${notifyModalData.coupleNames} is now LIVE!\n\nGuest Invitation Link: ${notifyModalData.liveUrl}\n\nYou and your guests can view the full invitation and submit RSVPs anytime.\n\nWarm regards,\nCandyInvito Studio`}
+                  className="w-full text-xs font-sans bg-[#FAF9F6] border border-black/10 rounded-xl p-3 outline-none select-all"
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setNotifyModalData(null)}
+                className="w-full sm:w-auto rounded-xl text-xs font-bold uppercase tracking-wider"
+              >
+                Close
+              </Button>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Button
+                  onClick={() => {
+                    const msg = `Dear ${notifyModalData.clientName},\n\nYour wedding invitation for ${notifyModalData.coupleNames} is now LIVE!\n\nGuest Invitation Link: ${notifyModalData.liveUrl}\n\nWarm regards,\nCandyInvito Studio`;
+                    copyToClipboard(msg);
+                  }}
+                  className="w-full sm:w-auto bg-[#201814] hover:bg-[#382B23] text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5"
+                >
+                  <Copy size={13} /> Copy Message
+                </Button>
+                {notifyModalData.clientEmail && (
+                  <a
+                    href={`mailto:${notifyModalData.clientEmail}?subject=${encodeURIComponent(`🎉 Your Wedding Invitation is Live! — CandyInvito`)}&body=${encodeURIComponent(`Dear ${notifyModalData.clientName},\n\nWe are delighted to share that your luxury wedding invitation for ${notifyModalData.coupleNames} is now LIVE!\n\nGuest Invitation Link: ${notifyModalData.liveUrl}\n\nYou and your guests can view the full invitation and submit RSVPs anytime.\n\nWarm regards,\nCandyInvito Studio`)}`}
+                    className="w-full sm:w-auto bg-[#DCA963] hover:bg-[#C99750] text-[#201814] font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+                  >
+                    <Mail size={13} /> Open Email
+                  </a>
+                )}
+              </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

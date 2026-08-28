@@ -1,11 +1,44 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
+import { createServerFn } from "@tanstack/react-start";
+import { createClient } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth-context";
 import { deploymentRequestRepository, invitationRepository } from "../lib/repositories";
 import { Loader2, ArrowLeft, UploadCloud, CheckCircle2, Globe, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { TemplateRenderer } from "../templates/TemplateRegistry";
+
+const serverGetPublicInvitation = createServerFn({ method: "POST" })
+  .validator((data: any) => data)
+  .handler(async (ctx) => {
+    const { slug, supabaseUrl, supabaseKey } = ctx.data || (ctx as any);
+    const client = createClient(supabaseUrl, supabaseKey);
+
+    const { data: inv, error: invErr } = await client
+      .from("invitations")
+      .select("*")
+      .eq("slug", slug)
+      .maybeSingle();
+
+    if (!inv || invErr) {
+      return { invitation: null, error: invErr?.message || "Invitation not found" };
+    }
+
+    // Check deployment status
+    const { data: dep } = await client
+      .from("deployment_requests")
+      .select("status, expires_at, hosted_at")
+      .eq("invitation_id", inv.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    return {
+      invitation: inv,
+      deployment: dep || null,
+    };
+  });
 
 export const Route = createFileRoute("/i/$slug")({
   component: InvitationRenderer,
@@ -48,20 +81,36 @@ function InvitationRenderer() {
 
   const fetchInvitation = async () => {
     try {
+      const url = import.meta.env.VITE_SUPABASE_URL;
+      const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      // 1. Try server function to fetch regardless of anonymous RLS policies
+      try {
+        const res = await serverGetPublicInvitation({
+          data: { slug, supabaseUrl: url, supabaseKey: key },
+        });
+
+        if (res?.invitation) {
+          setInvitation(res.invitation);
+          if (res.deployment?.status) {
+            setDeploymentStatus(res.deployment.status);
+          }
+          return;
+        }
+      } catch (srvErr) {
+        console.warn("Server fetch warning, attempting direct client fetch:", srvErr);
+      }
+
+      // 2. Client fallback fetch
       const { data: inv, error: fetchErr } = await supabase
         .from("invitations")
         .select("*")
         .eq("slug", slug)
         .maybeSingle();
 
-      if (fetchErr) {
-        console.error("Supabase fetch invitation error:", fetchErr);
-      }
-
       if (inv) {
         setInvitation(inv);
 
-        // Fetch deployment request status if any
         try {
           const { data: dep } = await supabase
             .from("deployment_requests")
@@ -78,7 +127,7 @@ function InvitationRenderer() {
         return;
       }
 
-      // Check local storage fallback
+      // 3. Check local storage fallback
       const localInvites = JSON.parse(localStorage.getItem("local_invitations") || "{}");
       if (localInvites[slug]) {
         setInvitation(localInvites[slug]);

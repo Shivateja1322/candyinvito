@@ -12,13 +12,39 @@ ALTER TABLE public.users
   ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'ACTIVE' 
   CHECK (status IN ('ACTIVE', 'HOLD', 'DELETED'));
 
--- 1b. Fix the invitations public RLS policy — the CHECK constraint uses 'Published'
---     but the old RLS policy checked for 'PUBLISHED' (all-caps) — they can never match.
+-- 1b. Fix is_invitation_published_and_live to check deployment_requests (status = 'HOSTED')
+CREATE OR REPLACE FUNCTION public.is_invitation_published_and_live(inv_id UUID)
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.deployment_requests dr
+    WHERE dr.invitation_id = inv_id
+      AND dr.status = 'HOSTED'
+      AND (dr.expires_at IS NULL OR dr.expires_at > now())
+  ) OR EXISTS (
+    SELECT 1 FROM public.deployments d
+    WHERE d.invitation_id = inv_id
+      AND d.status = 'LIVE'
+      AND (d.expires_at IS NULL OR d.expires_at > now())
+  ) OR EXISTS (
+    SELECT 1 FROM public.invitations i
+    WHERE i.id = inv_id
+      AND (i.status = 'Published' OR i.status = 'PUBLISHED')
+  );
+$$;
+
+REVOKE ALL ON FUNCTION public.is_invitation_published_and_live(UUID) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.is_invitation_published_and_live(UUID) TO anon, authenticated;
+
+-- 1c. Fix the invitations public RLS policy so public guests can read published/hosted invitations
 DO $$
 BEGIN
   DROP POLICY IF EXISTS "Public can read active published invitations" ON public.invitations;
   CREATE POLICY "Public can read active published invitations" ON public.invitations FOR SELECT USING (
-    (status = 'Published' OR status = 'PUBLISHED') AND public.is_invitation_published_and_live(id)
+    (status = 'Published' OR status = 'PUBLISHED') OR public.is_invitation_published_and_live(id)
   );
 END $$;
 
