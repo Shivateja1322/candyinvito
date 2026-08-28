@@ -35,21 +35,23 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
-  console.error(error);
+  console.error("Root Route ErrorComponent caught:", error);
   const router = useRouter();
-  useEffect(() => {
-    
-  }, [error]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
+      <div className="max-w-xl text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
           This page didn't load
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+        <p className="mt-2 text-sm text-destructive font-medium">
+          {error?.message || "Something went wrong on our end."}
         </p>
+        {error?.stack && (
+          <pre className="mt-4 p-4 text-xs text-left bg-muted/60 border rounded-md overflow-x-auto max-h-60 text-muted-foreground whitespace-pre-wrap">
+            {error.stack}
+          </pre>
+        )}
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
