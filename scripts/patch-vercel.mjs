@@ -5,14 +5,33 @@ const serverFuncDir = path.resolve(".vercel/output/functions/__server.func");
 const serverIndex = path.join(serverFuncDir, "index.mjs");
 const vcConfigPath = path.join(serverFuncDir, ".vc-config.json");
 
+function safeWrite(filePath, data, retries = 5) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      fs.writeFileSync(filePath, data, "utf8");
+      return;
+    } catch (e) {
+      if (i === retries - 1) throw e;
+      // Sleep synchronously for 100ms on Windows file lock
+      const end = Date.now() + 100;
+      while (Date.now() < end) {}
+    }
+  }
+}
+
 if (fs.existsSync(serverFuncDir)) {
-  // 1. Ensure .vc-config.json targets stable LTS nodejs20.x runtime
+  // 1. Configure .vc-config.json for standard Node.js (req, res) Serverless execution
   if (fs.existsSync(vcConfigPath)) {
     try {
-      const vcConfig = JSON.parse(fs.readFileSync(vcConfigPath, "utf8"));
-      vcConfig.runtime = "nodejs20.x";
-      fs.writeFileSync(vcConfigPath, JSON.stringify(vcConfig, null, 2));
-      console.log("[patch-vercel] Successfully set runtime to nodejs20.x in .vc-config.json");
+      const vcConfig = {
+        handler: "index.mjs",
+        launcherType: "Nodejs",
+        shouldAddHelpers: true,
+        supportsResponseStreaming: false,
+        runtime: "nodejs20.x"
+      };
+      safeWrite(vcConfigPath, JSON.stringify(vcConfig, null, 2));
+      console.log("[patch-vercel] Successfully configured .vc-config.json for standard Node.js (req, res) execution");
     } catch (e) {
       console.error("[patch-vercel] Failed to patch .vc-config.json:", e);
     }
@@ -99,7 +118,7 @@ function __spreadArray(to, from, pack) {
       console.log("[patch-vercel] Successfully applied safe bulletproof nodeHandler patch");
     }
     
-    fs.writeFileSync(serverIndex, content);
+    safeWrite(serverIndex, content);
   }
 } else {
   console.log("[patch-vercel] Serverless function directory not found, skipping");
