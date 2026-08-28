@@ -80,14 +80,21 @@ function ClientLayout() {
     <div className="flex h-screen w-full bg-[#FAF9F6] overflow-hidden text-[#201814] font-sans">
       {/* Sidebar - Client Portal */}
       <aside className="w-64 flex flex-col bg-[#FAF9F6] shrink-0 h-full border-r border-[#201814]/10">
-        <div className="p-8 pb-6">
-          <Link to="/client" className="block">
-            <h1 className="font-serif text-2xl font-medium tracking-wide text-[#201814]">
-              CandyInvito
-            </h1>
-            <p className="text-[10px] tracking-widest uppercase text-[#201814]/50 mt-1 font-semibold">
-              Client Portal
-            </p>
+        <div className="p-6 pb-5 border-b border-[#201814]/10">
+          <Link to="/client" className="flex items-center gap-3">
+            <img
+              src="/logo.png"
+              alt="CandyInvito Logo"
+              className="w-10 h-10 rounded-full object-cover shadow-sm shrink-0"
+            />
+            <div>
+              <h1 className="font-serif text-xl font-medium tracking-wide text-[#201814] leading-tight">
+                CandyInvito
+              </h1>
+              <p className="text-[9px] tracking-widest uppercase text-[#201814]/50 font-bold mt-0.5">
+                Client Portal
+              </p>
+            </div>
           </Link>
         </div>
 

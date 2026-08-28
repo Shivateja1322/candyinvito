@@ -85,10 +85,12 @@ function AdminLayout() {
       <aside className="w-64 flex flex-col bg-[#141210] text-[#EAE6DF] shrink-0 h-full border-r border-[#27231F] select-none">
         {/* Brand Header */}
         <div className="p-6 pb-5 border-b border-[#27231F]">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#DCA963] to-[#A87B3C] flex items-center justify-center text-[#141210] font-serif font-bold text-base shadow-sm">
-              C
-            </div>
+          <div className="flex items-center gap-3">
+            <img
+              src="/logo.png"
+              alt="CandyInvito Logo"
+              className="w-10 h-10 rounded-full object-cover shadow-sm border border-[#DCA963]/30 shrink-0"
+            />
             <div>
               <h1 className="font-serif text-lg font-bold tracking-tight text-white leading-none">
                 CandyInvito
