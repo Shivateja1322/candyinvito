@@ -1,24 +1,28 @@
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 
-const vcConfigPath = path.resolve('.vercel/output/functions/__server.func/.vc-config.json');
-const indexMjsPath = path.resolve('.vercel/output/functions/__server.func/index.mjs');
+const serverIndex = path.resolve(".vercel/output/functions/__server.func/index.mjs");
 
-if (fs.existsSync(vcConfigPath) && fs.existsSync(indexMjsPath)) {
-  const vcConfig = {
-    runtime: 'edge',
-    entrypoint: 'index.mjs'
-  };
-  fs.writeFileSync(vcConfigPath, JSON.stringify(vcConfig, null, 2));
-  console.log('Patched .vc-config.json for Edge runtime.');
-
-  let indexCode = fs.readFileSync(indexMjsPath, 'utf8');
-  indexCode = indexCode.replace(
-    'export { vercel_web_default as default };',
-    'export default vercel_web_default.fetch;'
-  );
-  fs.writeFileSync(indexMjsPath, indexCode);
-  console.log('Patched index.mjs to export fetch function directly.');
+if (fs.existsSync(serverIndex)) {
+  let content = fs.readFileSync(serverIndex, "utf8");
+  
+  // Fix Nitro upstream bug where Object.defineProperty(req.socket, "remoteAddress", ...)
+  // crashes with "TypeError: Cannot redefine property: remoteAddress" on reused sockets / keep-alive.
+  const target = 'Object.defineProperty(req.socket, "remoteAddress", { get() {';
+  if (content.includes(target)) {
+    content = content.replace(
+      target,
+      'try { Object.defineProperty(req.socket, "remoteAddress", { configurable: true, get() {'
+    );
+    content = content.replace(
+      'return ip ??= h?.split?.(",").shift()?.trim();\n\t} });',
+      'return ip ??= h?.split?.(",").shift()?.trim();\n\t} }); } catch {}'
+    );
+    fs.writeFileSync(serverIndex, content);
+    console.log("[patch-vercel] Successfully patched remoteAddress socket property definition");
+  } else {
+    console.log("[patch-vercel] Target definition not found or already patched");
+  }
 } else {
-  console.log('Vercel output not found, skipping patch.');
+  console.log("[patch-vercel] Serverless function index not found, skipping");
 }
