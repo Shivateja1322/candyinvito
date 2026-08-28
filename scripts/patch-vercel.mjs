@@ -12,7 +12,6 @@ function safeWrite(filePath, data, retries = 5) {
       return;
     } catch (e) {
       if (i === retries - 1) throw e;
-      // Sleep synchronously for 100ms on Windows file lock
       const end = Date.now() + 100;
       while (Date.now() < end) {}
     }
@@ -81,23 +80,33 @@ function __spreadArray(to, from, pack) {
       console.log("[patch-vercel] Successfully inlined tslib helpers");
     }
 
-    // 3. Replace the nodeHandler function with a bulletproof, exception-safe version
+    // 3. Replace the nodeHandler function with a bulletproof, exception-safe version including rawHeaders polyfill
     const nodeHandlerRegex = /function nodeHandler\(req, res\) \{[\s\S]*?return handler\(req, res\);\s*\}/;
     
     if (nodeHandlerRegex.test(content)) {
       const safeNodeHandler = `function nodeHandler(req, res) {
 	try {
 		let ip;
-		if (req && req.socket) {
-			try {
-				Object.defineProperty(req.socket, "remoteAddress", {
-					configurable: true,
-					get() {
-						const h = req.headers ? req.headers["x-forwarded-for"] : undefined;
-						return ip ??= h?.split?.(",").shift()?.trim();
+		if (req) {
+			if (!req.rawHeaders) {
+				req.rawHeaders = [];
+				if (req.headers) {
+					for (const [k, v] of Object.entries(req.headers)) {
+						req.rawHeaders.push(k, Array.isArray(v) ? v.join(", ") : String(v ?? ""));
 					}
-				});
-			} catch {}
+				}
+			}
+			if (req.socket) {
+				try {
+					Object.defineProperty(req.socket, "remoteAddress", {
+						configurable: true,
+						get() {
+							const h = req.headers ? req.headers["x-forwarded-for"] : undefined;
+							return ip ??= h?.split?.(",").shift()?.trim();
+						}
+					});
+				} catch {}
+			}
 		}
 		const isrURL = isrRouteRewrite(req?.url || "/", req?.headers ? req.headers["x-now-route-matches"] : undefined);
 		if (isrURL) {
@@ -115,7 +124,7 @@ function __spreadArray(to, from, pack) {
 	}
 }`;
       content = content.replace(nodeHandlerRegex, safeNodeHandler);
-      console.log("[patch-vercel] Successfully applied safe bulletproof nodeHandler patch");
+      console.log("[patch-vercel] Successfully applied safe bulletproof nodeHandler patch with rawHeaders polyfill");
     }
     
     safeWrite(serverIndex, content);
