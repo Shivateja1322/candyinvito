@@ -4,7 +4,7 @@ export default defineConfig({
   nitro: {
     preset: "vercel",
     vercel: {
-      edge: true
+      entryFormat: "node"
     },
     rollupConfig: {
       output: {
