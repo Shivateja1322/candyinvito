@@ -98,6 +98,7 @@ function ClientBuilder() {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string>("");
   const [showThemeSwitcher, setShowThemeSwitcher] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved" | "db_error">("saved");
 
   const hasHydrated = useRef(false);
@@ -416,67 +417,147 @@ function ClientBuilder() {
   return (
     <div className="h-screen w-full bg-[#F3F4F6] flex flex-col overflow-hidden font-sans">
       {/* HEADER */}
-      <div className="h-16 bg-white border-b border-black/5 flex items-center justify-between px-6 shrink-0 z-20">
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-black rounded flex items-center justify-center">
-              <span className="text-[#DCA963] font-serif font-bold text-lg">C</span>
+      <div className="h-16 bg-white border-b border-black/10 flex items-center justify-between px-3 sm:px-6 shrink-0 z-20 shadow-xs">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <button
+            onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+            className="md:hidden p-2 text-black/70 hover:text-black rounded-xl hover:bg-black/5 transition-colors"
+            title="Toggle Sections"
+          >
+            <Settings size={18} />
+          </button>
+
+          <Link to="/client" className="flex items-center gap-2.5">
+            <img
+              src="/logo.png"
+              alt="CandyInvito"
+              className="w-8 h-8 rounded-full object-cover border border-[#DCA963]/30"
+            />
+            <div className="hidden sm:block">
+              <span className="font-serif font-bold text-sm tracking-tight text-[#201814] block leading-none">
+                CandyInvito
+              </span>
+              <span className="text-[8px] uppercase tracking-[0.2em] text-[#DCA963] font-bold block mt-0.5">
+                Studio Builder
+              </span>
             </div>
-            <svg className="h-4" viewBox="0 0 120 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <text x="0" y="15" fill="black" className="font-serif font-bold tracking-widest text-sm">CANDY</text>
-              <text x="60" y="15" fill="black" className="font-sans font-light tracking-[0.2em] text-[10px]">STUDIO</text>
-            </svg>
-          </div>
-          <div className="h-4 w-px bg-black/10 mx-2"></div>
-          <div className="flex items-center gap-2 text-xs text-black/50">
-            {saveStatus === "saving" ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
-            <span>{saveStatus === "saving" ? "Saving..." : saveStatus === "unsaved" ? "Unsaved Changes" : "All changes saved"}</span>
+          </Link>
+
+          <div className="hidden lg:block h-4 w-px bg-black/10 mx-1"></div>
+
+          <div className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-black/50">
+            {saveStatus === "saving" ? (
+              <Loader2 size={12} className="animate-spin text-[#DCA963]" />
+            ) : (
+              <Check size={12} className="text-emerald-600" />
+            )}
+            <span className="text-[11px]">
+              {saveStatus === "saving"
+                ? "Saving..."
+                : saveStatus === "unsaved"
+                  ? "Unsaved"
+                  : "Saved"}
+            </span>
           </div>
         </div>
-        
-        <div className="flex items-center gap-3">
+
+        <div className="flex items-center gap-1.5 sm:gap-3">
           <button
             onClick={() => saveToDb(invitationRecord as any)}
-            disabled={saveStatus === 'saving' || saveStatus === 'saved'}
-            className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded text-xs font-bold uppercase tracking-widest hover:bg-black/80 transition-colors disabled:opacity-50"
+            disabled={saveStatus === "saving" || saveStatus === "saved"}
+            className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-[#141210] text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-[#DCA963] hover:text-[#141210] transition-all disabled:opacity-50 shadow-2xs"
           >
-            <Save size={14} />
-            {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : 'Save Draft'}
+            <Save size={13} />
+            <span className="hidden xs:inline">
+              {saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Saved" : "Save"}
+            </span>
           </button>
-                    <div className="relative">
-              <button onClick={() => setShowThemeSwitcher(!showThemeSwitcher)} className="flex items-center gap-2 border border-[#DCA963]/30 bg-[#DCA963]/5 hover:bg-[#DCA963]/10 text-[#DCA963] px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors">
-                <LayoutTemplate size={14} /> Theme: {themeSchema.name} <ChevronDown size={14} />
-              </button>
-              {showThemeSwitcher && (
-                <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-black/10 overflow-hidden z-50">
-                  {Object.values(themeCapabilities).map(theme => (
-                    <button key={theme.id} onClick={() => {
-                      setInvitationRecord(prev => prev ? { ...prev, template_id: theme.id } : prev);
+
+          <div className="relative">
+            <button
+              onClick={() => setShowThemeSwitcher(!showThemeSwitcher)}
+              className="hidden sm:flex items-center gap-1.5 border border-[#DCA963]/40 bg-[#DCA963]/10 hover:bg-[#DCA963]/20 text-[#141210] px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors shadow-2xs"
+            >
+              <LayoutTemplate size={13} />
+              <span className="truncate max-w-[100px]">{themeSchema.name}</span>
+              <ChevronDown size={13} />
+            </button>
+            {showThemeSwitcher && (
+              <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-black/10 overflow-hidden z-50 p-1.5">
+                {Object.values(themeCapabilities).map((theme) => (
+                  <button
+                    key={theme.id}
+                    onClick={() => {
+                      setInvitationRecord((prev) =>
+                        prev ? { ...prev, template_id: theme.id } : prev,
+                      );
                       setSaveStatus("unsaved");
                       setShowThemeSwitcher(false);
-                    }} className={`w-full text-left px-4 py-3 text-sm transition-colors hover:bg-black/5 ${invitationRecord?.template_id === theme.id ? "font-bold bg-black/5" : ""}`}>
-                      {theme.name}
-                      {theme.id === currentThemeId && <Check size={14} />}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          <button onClick={() => setIsPreviewMode(true)} className="flex items-center gap-2 bg-white border border-black/10 hover:bg-black/5 text-black px-5 py-2 rounded-lg text-xs font-semibold transition-colors">
-            <Eye size={14} /> Preview
+                    }}
+                    className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold uppercase tracking-wider transition-colors hover:bg-black/5 flex items-center justify-between ${
+                      invitationRecord?.template_id === theme.id
+                        ? "font-bold bg-[#FAF9F6] text-[#DCA963]"
+                        : "text-black/80"
+                    }`}
+                  >
+                    <span>{theme.name}</span>
+                    {theme.id === currentThemeId && <Check size={14} />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={() => setIsPreviewMode(true)}
+            className="flex items-center gap-1.5 bg-white border border-black/10 hover:bg-black/5 text-[#201814] px-3 sm:px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors shadow-2xs"
+          >
+            <Eye size={13} /> <span className="hidden xs:inline">Preview</span>
           </button>
-          <button onClick={handlePublish} className="bg-[#DCA963] hover:bg-[#C59652] text-white px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors shadow-lg shadow-[#DCA963]/20">
+
+          <button
+            onClick={handlePublish}
+            className="bg-[#DCA963] hover:bg-[#C99750] text-[#141210] font-bold px-4 sm:px-5 py-2 rounded-xl text-xs uppercase tracking-wider transition-all shadow-xs"
+          >
             Publish
           </button>
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* MOBILE BACKDROP FOR DRAWER */}
+        {isMobileSidebarOpen && (
+          <div
+            className="fixed inset-0 z-30 bg-black/50 backdrop-blur-xs md:hidden"
+            onClick={() => setIsMobileSidebarOpen(false)}
+          />
+        )}
+
         {/* SIDEBAR - STRUCTURAL CONTROLS */}
-        <div className="w-[320px] shrink-0 bg-white border-r border-black/5 overflow-y-auto flex flex-col shadow-sm z-10">
-          <div className="p-4 border-b border-black/5 bg-[#F8F9FA]">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-black/80 mb-2">Sections</h2>
-            <p className="text-[10px] text-black/50 leading-relaxed">Toggle sections and click to add items. Edit text and images directly on the invitation canvas.</p>
+        <div
+          className={`w-[300px] sm:w-[320px] shrink-0 bg-white border-r border-black/10 overflow-y-auto flex flex-col shadow-sm z-30 transition-transform duration-300 ${
+            isMobileSidebarOpen
+              ? "fixed inset-y-0 left-0 top-16 translate-x-0"
+              : "hidden md:flex"
+          }`}
+        >
+          <div className="p-4 border-b border-black/5 bg-[#FAF9F6] flex items-center justify-between">
+            <div>
+              <h2 className="text-xs font-bold uppercase tracking-widest text-[#201814]">
+                Sections & Layout
+              </h2>
+              <p className="text-[10px] text-black/50 leading-relaxed mt-0.5">
+                Toggle and customize sections.
+              </p>
+            </div>
+            {isMobileSidebarOpen && (
+              <button
+                onClick={() => setIsMobileSidebarOpen(false)}
+                className="md:hidden p-1 text-black/50 hover:text-black rounded-lg"
+              >
+                ✕
+              </button>
+            )}
           </div>
           
           <div className="flex-1 overflow-y-auto p-4 space-y-2">

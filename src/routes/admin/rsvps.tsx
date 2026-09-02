@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
 import { rsvpRepository } from "../../lib/repositories";
 import { toast } from "sonner";
-import { Loader2, Download, Filter, FileText } from "lucide-react";
+import { Loader2, Download, Filter, FileText, Sparkles, MessageSquare, Mail } from "lucide-react";
 
 export const Route = createFileRoute("/admin/rsvps")({
   component: RsvpsPage,
@@ -15,6 +15,7 @@ function RsvpsPage() {
 
   const fetchRsvps = async () => {
     try {
+      setLoading(true);
       const data = await rsvpRepository.list();
       setRsvps(data);
     } catch (err: any) {
@@ -56,73 +57,124 @@ function RsvpsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "candyinvito_rsvps.csv";
+    a.download = `candyinvito_rsvps_${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+    toast.success("RSVPs exported to CSV!");
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <header className="pb-6 border-b border-[#201814]/5 flex justify-between items-end">
+    <div className="space-y-8 animate-fade-in font-sans pb-10">
+      {/* Header */}
+      <header className="pb-6 border-b border-[#201814]/10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-display font-medium text-[#201814]">RSVPs</h1>
-          <p className="text-[#201814]/50 mt-1 font-light">Inspect all client RSVP submissions.</p>
+          <p className="text-[10px] tracking-[0.22em] uppercase text-[#201814]/50 font-bold mb-1.5 flex items-center gap-1.5">
+            <Sparkles size={12} className="text-[#DCA963]" /> Guest Attendance & Registry
+          </p>
+          <h1 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-[#201814]">
+            Global RSVPs
+          </h1>
         </div>
-        <button onClick={handleExport} className="flex items-center gap-2 bg-[#201814] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-black transition-colors">
-          <Download size={16} /> Export CSV
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleExport}
+            disabled={rsvps.length === 0}
+            className="flex items-center gap-2 bg-[#141210] hover:bg-[#DCA963] hover:text-[#141210] text-white px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-xs disabled:opacity-50"
+          >
+            <Download size={14} /> Export CSV
+          </button>
+        </div>
       </header>
 
-      <div className="rounded-xl border border-[#201814]/5 bg-white shadow-sm overflow-hidden">
+      {/* RSVPs Table Card */}
+      <div className="rounded-2xl border border-[#201814]/10 bg-white shadow-xs overflow-hidden">
         {loading ? (
-          <div className="p-12 flex justify-center items-center">
-            <Loader2 className="h-8 w-8 animate-spin text-[#201814]/20" />
+          <div className="p-16 flex flex-col items-center justify-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-[#DCA963]" />
+            <span className="text-xs text-black/40">Loading guest RSVP responses...</span>
           </div>
         ) : rsvps.length === 0 ? (
-          <div className="p-12 text-center">
+          <div className="p-16 text-center">
             <div className="h-12 w-12 rounded-full bg-[#201814]/5 flex items-center justify-center mx-auto mb-4">
               <FileText className="h-6 w-6 text-[#201814]/40" />
             </div>
-            <h3 className="text-lg font-medium text-[#201814]">No RSVPs found</h3>
-            <p className="text-sm text-[#201814]/50 mt-1">Wait for clients to receive RSVP submissions.</p>
+            <h3 className="text-lg font-serif font-bold text-[#201814]">No RSVPs found</h3>
+            <p className="text-xs text-[#201814]/50 mt-1">Guest submissions will appear here once invitations are live.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse min-w-[640px]">
               <thead>
-                <tr className="border-b border-[#201814]/5 bg-[#FDFBF7]">
-                  <th className="px-6 py-4 text-[10px] font-semibold tracking-widest uppercase text-[#201814]/40">Date</th>
-                  <th className="px-6 py-4 text-[10px] font-semibold tracking-widest uppercase text-[#201814]/40">Guest</th>
-                  <th className="px-6 py-4 text-[10px] font-semibold tracking-widest uppercase text-[#201814]/40">Invitation</th>
-                  <th className="px-6 py-4 text-[10px] font-semibold tracking-widest uppercase text-[#201814]/40">Status</th>
-                  <th className="px-6 py-4 text-[10px] font-semibold tracking-widest uppercase text-[#201814]/40">Message</th>
+                <tr className="border-b border-[#201814]/5 bg-[#FAF9F6]">
+                  <th className="px-5 py-4 text-[10px] font-bold tracking-widest uppercase text-[#201814]/50">
+                    Date
+                  </th>
+                  <th className="px-5 py-4 text-[10px] font-bold tracking-widest uppercase text-[#201814]/50">
+                    Guest Name
+                  </th>
+                  <th className="px-5 py-4 text-[10px] font-bold tracking-widest uppercase text-[#201814]/50">
+                    Invitation
+                  </th>
+                  <th className="px-5 py-4 text-[10px] font-bold tracking-widest uppercase text-[#201814]/50">
+                    Status
+                  </th>
+                  <th className="px-5 py-4 text-[10px] font-bold tracking-widest uppercase text-[#201814]/50">
+                    Message
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#201814]/5">
-                {rsvps.map((req, idx) => (
-                  <tr key={req.id || idx} className="hover:bg-[#FDFBF7]/50 transition-colors">
-                    <td className="px-6 py-4 text-xs font-medium text-[#201814]">
-                      {req.created_at ? new Date(req.created_at).toLocaleDateString() : (req.submittedAt ? new Date(req.submittedAt).toLocaleDateString() : "")}
-                    </td>
-                    <td className="px-6 py-4 text-sm font-medium text-[#201814]">
-                      {req.guest_name || req.guestName}
-                      <div className="text-xs text-[#201814]/50 font-light mt-0.5">
-                        {req.guests_count || req.guestCount} Guest(s)
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {req.invitation?.title || req.invitationId}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${(req.status === "ATTENDING" || req.attending) ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>
-                        {(req.status === "ATTENDING" || req.attending) ? "ATTENDING" : "NOT ATTENDING"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-xs text-[#201814]/70 max-w-[200px] truncate" title={req.message || req.dietaryRestrictions}>
-                      {req.message || req.dietaryRestrictions || "-"}
-                    </td>
-                  </tr>
-                ))}
+                {rsvps.map((req, idx) => {
+                  const isAttending = req.status === "ATTENDING" || req.attending === "YES" || req.attending === true;
+
+                  return (
+                    <tr key={req.id || idx} className="hover:bg-[#FAF9F6]/60 transition-colors">
+                      <td className="px-5 py-4 text-xs font-semibold text-[#201814]">
+                        {req.created_at
+                          ? new Date(req.created_at).toLocaleDateString(undefined, {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })
+                          : req.submittedAt
+                            ? new Date(req.submittedAt).toLocaleDateString(undefined, {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })
+                            : ""}
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="font-bold text-sm text-[#201814]">
+                          {req.guest_name || req.guestName}
+                        </div>
+                        <div className="text-xs text-[#201814]/50 font-medium mt-0.5">
+                          {req.guests_count || req.guestCount || 1} Guest(s)
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 text-xs font-semibold text-[#201814]">
+                        {req.invitation?.title || req.invitationId || "Wedding"}
+                      </td>
+                      <td className="px-5 py-4">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            isAttending
+                              ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                              : "bg-rose-100 text-rose-800 border border-rose-200"
+                          }`}
+                        >
+                          {isAttending ? "ATTENDING" : "DECLINED"}
+                        </span>
+                      </td>
+                      <td
+                        className="px-5 py-4 text-xs text-[#201814]/70 max-w-[240px] truncate"
+                        title={req.message || req.dietaryRestrictions}
+                      >
+                        {req.message || req.dietaryRestrictions || "-"}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

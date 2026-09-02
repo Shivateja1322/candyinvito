@@ -12,6 +12,7 @@ import {
   UsersRound,
   Sparkles,
   TrendingUp,
+  Activity,
 } from "lucide-react";
 import { Loader2 } from "lucide-react";
 
@@ -88,34 +89,38 @@ function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="p-16 flex items-center justify-center">
+      <div className="p-16 flex flex-col items-center justify-center gap-3">
         <Loader2 className="w-8 h-8 animate-spin text-[#DCA963]" />
+        <span className="text-xs text-black/40 font-sans">Compiling live analytics...</span>
       </div>
     );
   }
 
   return (
-    <div className="space-y-10 animate-fade-in font-sans">
-      <header className="pb-6 border-b border-[#201814]/10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div className="space-y-10 animate-fade-in font-sans pb-10">
+      {/* Header */}
+      <header className="pb-6 border-b border-[#201814]/10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <p className="text-[10px] tracking-[0.2em] uppercase text-[#201814]/50 font-bold mb-1">
-            Studio Intelligence
+          <p className="text-[10px] tracking-[0.22em] uppercase text-[#201814]/50 font-bold mb-1.5 flex items-center gap-1.5">
+            <Sparkles size={12} className="text-[#DCA963]" /> Studio Intelligence & Metrics
           </p>
-          <h1 className="text-3xl font-display font-medium tracking-tight text-[#201814]">
+          <h1 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-[#201814]">
             Platform Analytics
           </h1>
         </div>
-        <span className="text-xs text-[#201814]/60">
-          Real-time Live Sync: <strong className="text-emerald-700">Active</strong>
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full text-xs font-bold uppercase tracking-wider shadow-2xs">
+            <Activity size={12} className="text-emerald-600 animate-pulse" /> Live Realtime Sync
+          </span>
+        </div>
       </header>
 
       {/* Primary Overview Cards */}
-      <div>
-        <h2 className="text-sm font-bold uppercase tracking-widest text-black/50 mb-4">
+      <div className="space-y-4">
+        <h2 className="text-xs font-bold uppercase tracking-widest text-black/50">
           Core Metrics
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <StatCard
             icon={<Users size={20} />}
             label="Total Clients"
@@ -144,14 +149,14 @@ function AnalyticsPage() {
       </div>
 
       {/* Deployment Breakdown */}
-      <div>
-        <h2 className="text-sm font-bold uppercase tracking-widest text-black/50 mb-4">
+      <div className="space-y-4">
+        <h2 className="text-xs font-bold uppercase tracking-widest text-black/50">
           Hosting Breakdown
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <StatCard
             icon={<Clock size={20} />}
-            label="Pending Deployments"
+            label="Pending Reviews"
             value={stats?.pending}
             description="Awaiting admin approval"
             color="amber"
@@ -197,26 +202,28 @@ function StatCard({
   color?: "amber" | "emerald" | "indigo" | "rose";
 }) {
   const iconColors = {
-    amber: "text-amber-700 bg-amber-50",
-    emerald: "text-emerald-700 bg-emerald-50",
-    indigo: "text-indigo-700 bg-indigo-50",
-    rose: "text-rose-700 bg-rose-50",
+    amber: "text-amber-800 bg-amber-100 border border-amber-200",
+    emerald: "text-emerald-800 bg-emerald-100 border border-emerald-200",
+    indigo: "text-indigo-800 bg-indigo-100 border border-indigo-200",
+    rose: "text-rose-800 bg-rose-100 border border-rose-200",
   };
 
-  const currentIconColor = color ? iconColors[color] : "text-[#DCA963] bg-[#DCA963]/10";
+  const currentIconColor = color ? iconColors[color] : "text-[#141210] bg-[#DCA963]/20 border border-[#DCA963]/30";
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-xs border border-black/10 flex flex-col justify-between hover:shadow-md transition-shadow">
+    <div className="bg-white p-6 rounded-2xl shadow-xs border border-black/10 flex flex-col justify-between hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 group">
       <div className="flex items-center justify-between mb-4">
-        <span className="text-xs font-semibold uppercase tracking-wider text-black/60">
+        <span className="text-xs font-bold uppercase tracking-wider text-black/60 group-hover:text-black transition-colors">
           {label}
         </span>
-        <div className={`p-2 rounded-xl ${currentIconColor}`}>
+        <div className={`p-2.5 rounded-xl transition-transform group-hover:scale-110 ${currentIconColor}`}>
           {icon}
         </div>
       </div>
       <div>
-        <p className="text-4xl font-serif font-bold text-[#201814] mb-1">{value || 0}</p>
+        <p className="text-3xl sm:text-4xl font-serif font-bold text-[#201814] mb-1.5 tracking-tight">
+          {value || 0}
+        </p>
         {description && (
           <p className="text-xs text-black/50 font-medium">{description}</p>
         )}

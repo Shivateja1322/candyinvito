@@ -32,7 +32,7 @@ import {
   DialogTitle,
 } from "../../components/ui/dialog";
 import { toast } from "sonner";
-import { Trash2, KeyRound, UserPlus, Shield, User, Loader2, Check } from "lucide-react";
+import { Trash2, KeyRound, UserPlus, Shield, User, Loader2, Check, Sparkles } from "lucide-react";
 
 const serverCreateUser = createServerFn({ method: "POST" })
   .validator((data: any) => data)
@@ -245,40 +245,41 @@ function UserManagement() {
   };
 
   return (
-    <div className="space-y-10 animate-fade-in font-sans">
-      <header className="pb-6 border-b border-[#201814]/10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div className="space-y-8 animate-fade-in font-sans pb-10">
+      {/* Header */}
+      <header className="pb-6 border-b border-[#201814]/10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <p className="text-[10px] tracking-[0.2em] uppercase text-[#201814]/50 font-bold mb-1">
-            Studio Security & Access
+          <p className="text-[10px] tracking-[0.22em] uppercase text-[#201814]/50 font-bold mb-1.5 flex items-center gap-1.5">
+            <Sparkles size={12} className="text-[#DCA963]" /> Studio Security & Access
           </p>
-          <h1 className="text-3xl font-display font-medium tracking-tight text-[#201814]">
+          <h1 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-[#201814]">
             User & Role Management
           </h1>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-[#201814]/60">
-            Total Users: <strong className="text-[#201814]">{users.length}</strong>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-black/10 rounded-full text-xs font-bold uppercase tracking-wider text-black/70 shadow-2xs">
+            Total Accounts: <strong className="text-[#201814]">{users.length}</strong>
           </span>
         </div>
       </header>
 
-      <div className="grid gap-8 lg:grid-cols-3">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
         {/* Create User Card */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-2xl border border-black/10 p-6 shadow-sm">
-            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-black/5">
-              <div className="p-2 bg-[#DCA963]/10 text-[#DCA963] rounded-xl">
+          <div className="bg-white rounded-2xl border border-black/10 p-5 sm:p-6 shadow-xs sticky top-20">
+            <div className="flex items-center gap-3 mb-5 pb-3 border-b border-black/5">
+              <div className="p-2.5 bg-[#DCA963]/10 text-[#DCA963] rounded-xl">
                 <UserPlus size={18} />
               </div>
               <div>
-                <h2 className="text-lg font-serif font-medium text-[#201814]">Create User</h2>
+                <h2 className="text-lg font-serif font-bold text-[#201814]">Create User</h2>
                 <p className="text-xs text-black/50">Add a client or administrator account.</p>
               </div>
             </div>
 
             <form onSubmit={handleCreateUser} className="space-y-4">
               <div>
-                <Label htmlFor="newUserName" className="text-xs font-semibold uppercase tracking-wider text-black/60 block mb-1.5">
+                <Label htmlFor="newUserName" className="text-xs font-bold uppercase tracking-wider text-black/60 block mb-1.5">
                   Full Name / Couple Title
                 </Label>
                 <Input
@@ -287,12 +288,12 @@ function UserManagement() {
                   placeholder="e.g. Arjun & Priya"
                   value={newUserName}
                   onChange={(e) => setNewUserName(e.target.value)}
-                  className="border-black/10 rounded-xl focus-visible:ring-[#DCA963]"
+                  className="border-black/10 rounded-xl focus-visible:ring-[#DCA963] text-sm py-2.5"
                 />
               </div>
 
               <div>
-                <Label htmlFor="newUserEmail" className="text-xs font-semibold uppercase tracking-wider text-black/60 block mb-1.5">
+                <Label htmlFor="newUserEmail" className="text-xs font-bold uppercase tracking-wider text-black/60 block mb-1.5">
                   Email Address *
                 </Label>
                 <Input
@@ -302,12 +303,12 @@ function UserManagement() {
                   value={newUserEmail}
                   onChange={(e) => setNewUserEmail(e.target.value)}
                   required
-                  className="border-black/10 rounded-xl focus-visible:ring-[#DCA963]"
+                  className="border-black/10 rounded-xl focus-visible:ring-[#DCA963] text-sm py-2.5"
                 />
               </div>
 
               <div>
-                <Label htmlFor="newUserPassword" className="text-xs font-semibold uppercase tracking-wider text-black/60 block mb-1.5">
+                <Label htmlFor="newUserPassword" className="text-xs font-bold uppercase tracking-wider text-black/60 block mb-1.5">
                   Initial Password *
                 </Label>
                 <Input
@@ -318,19 +319,19 @@ function UserManagement() {
                   onChange={(e) => setNewUserPassword(e.target.value)}
                   required
                   minLength={6}
-                  className="border-black/10 rounded-xl focus-visible:ring-[#DCA963]"
+                  className="border-black/10 rounded-xl focus-visible:ring-[#DCA963] text-sm py-2.5"
                 />
               </div>
 
               <div>
-                <Label htmlFor="newUserRole" className="text-xs font-semibold uppercase tracking-wider text-black/60 block mb-1.5">
+                <Label htmlFor="newUserRole" className="text-xs font-bold uppercase tracking-wider text-black/60 block mb-1.5">
                   Account Role *
                 </Label>
                 <select
                   id="newUserRole"
                   value={newUserRole}
                   onChange={(e) => setNewUserRole(e.target.value as "ADMIN" | "CLIENT")}
-                  className="w-full border border-black/10 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:border-[#DCA963]"
+                  className="w-full border border-black/10 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:border-[#DCA963] transition-colors"
                 >
                   <option value="CLIENT">Client (Standard Access)</option>
                   <option value="ADMIN">Admin (Full System Access)</option>
@@ -340,10 +341,10 @@ function UserManagement() {
               <Button
                 type="submit"
                 disabled={isCreating}
-                className="w-full bg-[#201814] text-white hover:bg-[#382B23] rounded-xl py-3 text-xs font-bold uppercase tracking-widest transition-colors shadow-sm mt-2"
+                className="w-full bg-[#141210] hover:bg-[#DCA963] hover:text-[#141210] text-white rounded-xl py-3 text-xs font-bold uppercase tracking-widest transition-all shadow-xs mt-2"
               >
                 {isCreating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                {isCreating ? "Creating..." : "Create Account"}
+                {isCreating ? "Creating Account..." : "Create Account"}
               </Button>
             </form>
           </div>
@@ -351,31 +352,32 @@ function UserManagement() {
 
         {/* User Table List */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-2xl border border-black/10 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-black/5 flex items-center justify-between">
-              <h2 className="text-lg font-serif font-medium text-[#201814]">Platform Accounts</h2>
-              <span className="text-xs font-medium text-black/40">
-                {users.length} Total Registered
+          <div className="bg-white rounded-2xl border border-black/10 shadow-xs overflow-hidden">
+            <div className="p-5 sm:p-6 border-b border-black/5 flex items-center justify-between">
+              <h2 className="text-lg font-serif font-bold text-[#201814]">Platform Accounts</h2>
+              <span className="text-xs font-semibold text-black/40">
+                {users.length} Registered
               </span>
             </div>
 
             {isLoadingUsers ? (
-              <div className="p-16 flex items-center justify-center">
+              <div className="p-16 flex flex-col items-center justify-center gap-3">
                 <Loader2 className="w-8 h-8 animate-spin text-[#DCA963]" />
+                <span className="text-xs text-black/40">Loading platform accounts...</span>
               </div>
             ) : users.length === 0 ? (
               <div className="p-12 text-center text-black/40 italic">
                 No users found in database.
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto -mx-0">
                 <Table>
                   <TableHeader className="bg-[#FAF9F6]">
                     <TableRow className="border-black/5 hover:bg-transparent">
-                      <TableHead className="text-[10px] uppercase font-bold tracking-widest text-black/50">User Details</TableHead>
-                      <TableHead className="text-[10px] uppercase font-bold tracking-widest text-black/50">Role</TableHead>
-                      <TableHead className="text-[10px] uppercase font-bold tracking-widest text-black/50">Status</TableHead>
-                      <TableHead className="text-[10px] uppercase font-bold tracking-widest text-black/50 text-right pr-6">Actions</TableHead>
+                      <TableHead className="text-[10px] uppercase font-bold tracking-widest text-black/50 py-3.5 pl-5">User Details</TableHead>
+                      <TableHead className="text-[10px] uppercase font-bold tracking-widest text-black/50 py-3.5">Role</TableHead>
+                      <TableHead className="text-[10px] uppercase font-bold tracking-widest text-black/50 py-3.5">Status</TableHead>
+                      <TableHead className="text-[10px] uppercase font-bold tracking-widest text-black/50 py-3.5 text-right pr-5">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -384,21 +386,21 @@ function UserManagement() {
                       const isAdmin = u.role?.toUpperCase() === "ADMIN";
 
                       return (
-                        <TableRow key={u.id} className="border-black/5 hover:bg-[#FAF9F6]/50 transition-colors">
-                          <TableCell className="py-4">
+                        <TableRow key={u.id} className="border-black/5 hover:bg-[#FAF9F6]/60 transition-colors">
+                          <TableCell className="py-4 pl-5">
                             <div className="flex flex-col">
-                              <span className="font-semibold text-sm text-[#201814] flex items-center gap-1.5">
+                              <span className="font-bold text-sm text-[#201814] flex items-center gap-1.5">
                                 {u.name || (isAdmin ? "Admin User" : "Client User")}
                                 {isSelf && (
-                                  <span className="bg-[#DCA963]/20 text-[#DCA963] text-[9px] font-bold px-1.5 py-0.5 rounded">
+                                  <span className="bg-[#DCA963]/20 text-[#DCA963] text-[9px] font-extrabold px-1.5 py-0.5 rounded">
                                     YOU
                                   </span>
                                 )}
                               </span>
-                              <span className="text-xs text-black/50 font-light">{u.email}</span>
+                              <span className="text-xs text-black/50 font-normal mt-0.5">{u.email}</span>
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-4">
                             <span
                               className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${
                                 isAdmin
@@ -410,18 +412,18 @@ function UserManagement() {
                               {u.role}
                             </span>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-4">
                             <span
                               className={`inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${
                                 u.status === "ACTIVE" || !u.status
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-amber-100 text-amber-800"
+                                  ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                  : "bg-amber-100 text-amber-800 border border-amber-200"
                               }`}
                             >
                               {u.status || "ACTIVE"}
                             </span>
                           </TableCell>
-                          <TableCell className="text-right pr-6">
+                          <TableCell className="py-4 text-right pr-5">
                             <div className="flex items-center justify-end gap-2">
                               {/* Direct Set Password Button */}
                               <button
@@ -429,11 +431,11 @@ function UserManagement() {
                                   setPasswordModalUser(u);
                                   setNewPasswordValue("");
                                 }}
-                                className="flex items-center gap-1 bg-black/5 hover:bg-[#DCA963] hover:text-white text-black px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                                className="flex items-center gap-1 bg-black/5 hover:bg-[#DCA963] hover:text-[#141210] text-[#201814] px-2.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors shadow-2xs"
                                 title="Reset or set new password"
                               >
                                 <KeyRound size={13} />
-                                <span className="hidden sm:inline">Set Password</span>
+                                <span className="hidden sm:inline">Set Pass</span>
                               </button>
 
                               {/* Status Dropdown */}
@@ -441,7 +443,7 @@ function UserManagement() {
                                 value={u.status || "ACTIVE"}
                                 onValueChange={(val) => handleUpdateStatus(u.id, val)}
                               >
-                                <SelectTrigger className="w-[100px] h-8 text-xs border-black/10">
+                                <SelectTrigger className="w-[90px] h-8 text-xs border-black/10 rounded-lg">
                                   <SelectValue placeholder="Status" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -455,7 +457,7 @@ function UserManagement() {
                                 <button
                                   onClick={() => handleHardDelete(u.id, u.email)}
                                   disabled={isDeleting === u.id}
-                                  className="p-2 text-black/40 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                  className="p-1.5 text-black/40 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
                                   title="Permanently Delete User"
                                 >
                                   {isDeleting === u.id ? (
@@ -465,7 +467,7 @@ function UserManagement() {
                                   )}
                                 </button>
                               ) : (
-                                <span className="w-7" />
+                                <span className="w-6" />
                               )}
                             </div>
                           </TableCell>
@@ -483,12 +485,12 @@ function UserManagement() {
       {/* Direct Password Reset Modal */}
       {passwordModalUser && (
         <Dialog open={!!passwordModalUser} onOpenChange={() => setPasswordModalUser(null)}>
-          <DialogContent className="sm:max-w-md bg-white rounded-2xl p-6">
+          <DialogContent className="sm:max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-black/10">
             <DialogHeader>
-              <DialogTitle className="font-serif text-xl text-[#201814] flex items-center gap-2">
+              <DialogTitle className="font-serif text-xl font-bold text-[#201814] flex items-center gap-2">
                 <KeyRound className="w-5 h-5 text-[#DCA963]" /> Set New Password
               </DialogTitle>
-              <DialogDescription className="text-xs text-black/60">
+              <DialogDescription className="text-xs text-black/60 pt-1">
                 Directly change the login password for{" "}
                 <strong className="text-[#201814]">{passwordModalUser.email}</strong>.
               </DialogDescription>
@@ -505,24 +507,24 @@ function UserManagement() {
                   placeholder="Enter new password"
                   value={newPasswordValue}
                   onChange={(e) => setNewPasswordValue(e.target.value)}
-                  className="rounded-xl border-black/10 focus-visible:ring-[#DCA963]"
+                  className="rounded-xl border-black/10 focus-visible:ring-[#DCA963] text-sm py-2.5"
                   autoFocus
                 />
               </div>
             </div>
 
-            <DialogFooter className="flex items-center justify-between gap-3">
+            <DialogFooter className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 pt-2">
               <Button
                 variant="outline"
                 onClick={() => setPasswordModalUser(null)}
-                className="rounded-xl text-xs font-bold uppercase tracking-wider"
+                className="w-full sm:w-auto rounded-xl text-xs font-bold uppercase tracking-wider"
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleDirectPasswordSave}
                 disabled={isSettingPassword || !newPasswordValue}
-                className="bg-[#201814] hover:bg-[#DCA963] text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
+                className="w-full sm:w-auto bg-[#141210] hover:bg-[#DCA963] hover:text-[#141210] text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-colors shadow-xs"
               >
                 {isSettingPassword ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 {isSettingPassword ? "Saving..." : "Save Password"}

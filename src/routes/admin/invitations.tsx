@@ -3,7 +3,19 @@ import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
 import { invitationRepository } from "../../lib/repositories";
 import { toast } from "sonner";
-import { Loader2, Search, Filter, Eye, Trash2, Copy, ExternalLink } from "lucide-react";
+import {
+  Loader2,
+  Search,
+  Filter,
+  Eye,
+  Trash2,
+  Copy,
+  ExternalLink,
+  Sparkles,
+  Mail,
+  Calendar,
+  Layers,
+} from "lucide-react";
 import { Invitation } from "../../lib/types";
 
 export const Route = createFileRoute("/admin/invitations")({
@@ -80,6 +92,7 @@ function InvitationsPage() {
       const term = searchTerm.toLowerCase();
       return (
         (inv.title || "").toLowerCase().includes(term) ||
+        (inv.couple_names || "").toLowerCase().includes(term) ||
         (inv.slug || "").toLowerCase().includes(term) ||
         (inv.client_id || "").toLowerCase().includes(term) ||
         (inv.template_id || "").toLowerCase().includes(term)
@@ -89,23 +102,26 @@ function InvitationsPage() {
   });
 
   return (
-    <div className="space-y-8 animate-fade-in font-sans">
-      <header className="pb-6 border-b border-[#201814]/10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div className="space-y-8 animate-fade-in font-sans pb-10">
+      {/* Header */}
+      <header className="pb-6 border-b border-[#201814]/10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <p className="text-[10px] tracking-[0.2em] uppercase text-[#201814]/50 font-bold mb-1">
-            Studio Invitations
+          <p className="text-[10px] tracking-[0.22em] uppercase text-[#201814]/50 font-bold mb-1.5 flex items-center gap-1.5">
+            <Sparkles size={12} className="text-[#DCA963]" /> Studio Invitations
           </p>
-          <h1 className="text-3xl font-display font-medium text-[#201814]">
+          <h1 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-[#201814]">
             Invitation Registry
           </h1>
         </div>
-        <span className="text-xs text-[#201814]/60">
-          Showing <strong className="text-[#201814]">{filtered.length}</strong> of {invitations.length} invitations
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-black/10 rounded-full text-xs font-bold uppercase tracking-wider text-black/70 shadow-2xs">
+            Showing <strong className="text-[#201814]">{filtered.length}</strong> of {invitations.length} designs
+          </span>
+        </div>
       </header>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col md:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#201814]/40" />
           <input
@@ -119,7 +135,7 @@ function InvitationsPage() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="bg-white border border-[#201814]/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#DCA963] shadow-xs cursor-pointer font-medium"
+          className="bg-white border border-[#201814]/10 rounded-xl px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[#201814] focus:outline-none focus:border-[#DCA963] shadow-xs cursor-pointer"
         >
           <option value="ALL">All Statuses</option>
           <option value="DRAFT">Draft</option>
@@ -129,37 +145,38 @@ function InvitationsPage() {
       </div>
 
       {/* Invitations Table Card */}
-      <div className="rounded-2xl border border-[#201814]/10 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-2xl border border-[#201814]/10 bg-white shadow-xs overflow-hidden">
         {loading ? (
-          <div className="p-16 flex justify-center items-center">
+          <div className="p-16 flex flex-col items-center justify-center gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-[#DCA963]" />
+            <span className="text-xs text-black/40">Loading studio invitations...</span>
           </div>
         ) : filtered.length === 0 ? (
           <div className="p-16 text-center">
             <div className="h-12 w-12 rounded-full bg-[#201814]/5 flex items-center justify-center mx-auto mb-4">
               <Filter className="h-6 w-6 text-[#201814]/40" />
             </div>
-            <h3 className="text-lg font-serif font-medium text-[#201814]">No invitations found</h3>
+            <h3 className="text-lg font-serif font-bold text-[#201814]">No invitations found</h3>
             <p className="text-xs text-[#201814]/50 mt-1">Try adjusting your filters or search terms.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse min-w-[620px]">
               <thead>
                 <tr className="border-b border-[#201814]/5 bg-[#FAF9F6]">
-                  <th className="px-6 py-4 text-[10px] font-bold tracking-widest uppercase text-[#201814]/50">
+                  <th className="px-5 py-4 text-[10px] font-bold tracking-widest uppercase text-[#201814]/50">
                     Couple & Slug
                   </th>
-                  <th className="px-6 py-4 text-[10px] font-bold tracking-widest uppercase text-[#201814]/50">
+                  <th className="px-5 py-4 text-[10px] font-bold tracking-widest uppercase text-[#201814]/50">
                     Theme / Template
                   </th>
-                  <th className="px-6 py-4 text-[10px] font-bold tracking-widest uppercase text-[#201814]/50">
+                  <th className="px-5 py-4 text-[10px] font-bold tracking-widest uppercase text-[#201814]/50">
                     Status
                   </th>
-                  <th className="px-6 py-4 text-[10px] font-bold tracking-widest uppercase text-[#201814]/50">
+                  <th className="px-5 py-4 text-[10px] font-bold tracking-widest uppercase text-[#201814]/50">
                     Created Date
                   </th>
-                  <th className="px-6 py-4 text-[10px] font-bold tracking-widest uppercase text-[#201814]/50 text-right pr-6">
+                  <th className="px-5 py-4 text-[10px] font-bold tracking-widest uppercase text-[#201814]/50 text-right pr-5">
                     Actions
                   </th>
                 </tr>
@@ -169,59 +186,62 @@ function InvitationsPage() {
                   const previewUrl = `/i/${inv.slug}?mode=preview`;
                   const publicUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/i/${inv.slug}`;
                   const isPublished = (inv.status || "").toLowerCase() === "published";
+                  const isHosted = (inv.status || "").toLowerCase() === "hosted";
 
                   return (
                     <tr key={inv.id} className="hover:bg-[#FAF9F6]/60 transition-colors">
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-4">
                         <div className="flex flex-col">
-                          <span className="text-sm font-semibold text-[#201814]">
+                          <span className="text-sm font-bold text-[#201814]">
                             {inv.couple_names || inv.title || "Untitled Wedding"}
                           </span>
-                          <span className="text-xs text-[#201814]/50 font-mono">
+                          <span className="text-xs text-[#201814]/50 font-mono mt-0.5">
                             /{inv.slug}
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-xs font-medium text-[#201814]">
-                        <span className="bg-black/5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-black/70">
+                      <td className="px-5 py-4 text-xs font-semibold text-[#201814]">
+                        <span className="bg-black/5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-black/70 border border-black/5">
                           {inv.template_id}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-4">
                         <span
                           className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                            isPublished
-                              ? "bg-emerald-100 text-emerald-800"
-                              : "bg-amber-100 text-amber-800"
+                            isHosted
+                              ? "bg-indigo-100 text-indigo-800 border border-indigo-200"
+                              : isPublished
+                                ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                : "bg-amber-100 text-amber-800 border border-amber-200"
                           }`}
                         >
                           {inv.status || "Draft"}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-xs text-[#201814]/70 font-medium">
+                      <td className="px-5 py-4 text-xs text-[#201814]/70 font-medium">
                         {new Date(inv.created_at || Date.now()).toLocaleDateString(undefined, {
                           month: "short",
                           day: "numeric",
                           year: "numeric",
                         })}
                       </td>
-                      <td className="px-6 py-4 text-right pr-6">
+                      <td className="px-5 py-4 text-right pr-5">
                         <div className="flex items-center justify-end gap-2">
                           {/* Preview Link (Never 404s) */}
                           <a
                             href={previewUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-[#201814] bg-black/5 hover:bg-[#DCA963] hover:text-white rounded-lg transition-colors"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-[#201814] bg-black/5 hover:bg-[#DCA963] hover:text-[#141210] rounded-xl transition-all shadow-2xs"
                             title="Preview Invitation"
                           >
-                            <Eye size={13} /> Preview
+                            <Eye size={13} /> <span className="hidden sm:inline">Preview</span>
                           </a>
 
                           {/* Copy Public Link */}
                           <button
                             onClick={() => copyToClipboard(publicUrl)}
-                            className="p-2 text-black/50 hover:text-black hover:bg-black/5 rounded-lg transition-colors"
+                            className="p-2 text-black/50 hover:text-black hover:bg-black/5 rounded-xl transition-colors"
                             title="Copy Public Link"
                           >
                             <Copy size={14} />
@@ -236,7 +256,7 @@ function InvitationsPage() {
                               )
                             }
                             disabled={isDeleting === inv.id}
-                            className="p-2 text-black/40 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-2 text-black/40 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
                             title="Delete Invitation"
                           >
                             {isDeleting === inv.id ? (

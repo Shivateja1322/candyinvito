@@ -250,23 +250,24 @@ function DeploymentsPage() {
   });
 
   return (
-    <div className="space-y-8 animate-fade-in font-sans">
-      <header className="pb-6 border-b border-[#201814]/10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div className="space-y-8 animate-fade-in font-sans pb-10">
+      {/* Header */}
+      <header className="pb-6 border-b border-[#201814]/10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <p className="text-[10px] tracking-[0.2em] uppercase text-[#201814]/50 font-bold mb-1">
-            Studio Hosting & Domains
+          <p className="text-[10px] tracking-[0.22em] uppercase text-[#201814]/50 font-bold mb-1.5 flex items-center gap-1.5">
+            <Sparkles size={12} className="text-[#DCA963]" /> Studio Hosting & Domains
           </p>
-          <h1 className="text-3xl font-display font-medium text-[#201814]">
+          <h1 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-[#201814]">
             Deployment Requests
           </h1>
         </div>
-        <span className="text-xs text-[#201814]/60">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-black/10 rounded-full text-xs font-bold uppercase tracking-wider text-black/70 shadow-2xs">
           Showing <strong className="text-[#201814]">{filteredRequests.length}</strong> of {requests.length} requests
         </span>
       </header>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col md:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#201814]/40" />
           <input
@@ -280,45 +281,46 @@ function DeploymentsPage() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="bg-white border border-[#201814]/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#DCA963] shadow-xs cursor-pointer font-medium"
+          className="bg-white border border-[#201814]/10 rounded-xl px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[#201814] focus:outline-none focus:border-[#DCA963] shadow-xs cursor-pointer"
         >
           <option value="ALL">All Statuses</option>
           <option value="PENDING">Pending Review</option>
-          <option value="APPROVED">Approved (Awaiting Host)</option>
+          <option value="APPROVED">Approved (Ready to Host)</option>
           <option value="HOSTED">Hosted & Live</option>
           <option value="REJECTED">Rejected</option>
         </select>
       </div>
 
       {/* Deployments Table Card */}
-      <div className="rounded-2xl border border-[#201814]/10 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-2xl border border-[#201814]/10 bg-white shadow-xs overflow-hidden">
         {loading ? (
-          <div className="p-16 flex justify-center items-center">
+          <div className="p-16 flex flex-col items-center justify-center gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-[#DCA963]" />
+            <span className="text-xs text-black/40">Loading deployment requests...</span>
           </div>
         ) : filteredRequests.length === 0 ? (
           <div className="p-16 text-center">
             <div className="h-12 w-12 rounded-full bg-[#201814]/5 flex items-center justify-center mx-auto mb-4">
               <Filter className="h-6 w-6 text-[#201814]/40" />
             </div>
-            <h3 className="text-lg font-serif font-medium text-[#201814]">No deployment requests found</h3>
+            <h3 className="text-lg font-serif font-bold text-[#201814]">No deployment requests found</h3>
             <p className="text-xs text-[#201814]/50 mt-1">Try adjusting your filters or search terms.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse min-w-[720px]">
               <thead>
                 <tr className="border-b border-[#201814]/5 bg-[#FAF9F6]">
-                  <th className="px-6 py-4 text-[10px] font-bold tracking-widest uppercase text-[#201814]/50">
+                  <th className="px-5 py-4 text-[10px] font-bold tracking-widest uppercase text-[#201814]/50">
                     Request Date
                   </th>
-                  <th className="px-6 py-4 text-[10px] font-bold tracking-widest uppercase text-[#201814]/50">
+                  <th className="px-5 py-4 text-[10px] font-bold tracking-widest uppercase text-[#201814]/50">
                     Client & Couple
                   </th>
-                  <th className="px-6 py-4 text-[10px] font-bold tracking-widest uppercase text-[#201814]/50">
+                  <th className="px-5 py-4 text-[10px] font-bold tracking-widest uppercase text-[#201814]/50">
                     Status & Hosting Info
                   </th>
-                  <th className="px-6 py-4 text-[10px] font-bold tracking-widest uppercase text-[#201814]/50 text-right pr-6">
+                  <th className="px-5 py-4 text-[10px] font-bold tracking-widest uppercase text-[#201814]/50 text-right pr-5">
                     Review Actions
                   </th>
                 </tr>
@@ -334,7 +336,7 @@ function DeploymentsPage() {
 
                   return (
                     <tr key={req.id} className="hover:bg-[#FAF9F6]/60 transition-colors">
-                      <td className="px-6 py-4 text-xs font-medium text-[#201814]">
+                      <td className="px-5 py-4 text-xs font-semibold text-[#201814]">
                         {new Date(req.created_at).toLocaleDateString(undefined, {
                           month: "short",
                           day: "numeric",
@@ -342,32 +344,32 @@ function DeploymentsPage() {
                         })}
                       </td>
 
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-4">
                         <div className="flex flex-col">
-                          <span className="text-sm font-semibold text-[#201814]">
+                          <span className="text-sm font-bold text-[#201814]">
                             {req.invitation?.couple_names || req.invitation?.title || "Untitled Invitation"}
                           </span>
-                          <span className="text-xs text-[#201814]/70">
+                          <span className="text-xs text-[#201814]/70 mt-0.5">
                             Client: <strong>{req.clientName || "Client"}</strong> ({req.clientEmail || req.requested_by.substring(0, 8)})
                           </span>
-                          <span className="text-xs text-[#201814]/50 font-mono">
+                          <span className="text-xs text-[#201814]/50 font-mono mt-0.5">
                             /i/{req.invitation?.slug}
                           </span>
                         </div>
                       </td>
 
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-4">
                         <div className="flex flex-col gap-1.5">
                           <div>
                             <span
                               className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                                 req.status === "HOSTED"
-                                  ? "bg-indigo-100 text-indigo-800"
+                                  ? "bg-indigo-100 text-indigo-800 border border-indigo-200"
                                   : req.status === "APPROVED"
-                                    ? "bg-emerald-100 text-emerald-800"
+                                    ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
                                     : req.status === "PENDING"
-                                      ? "bg-amber-100 text-amber-800"
-                                      : "bg-rose-100 text-rose-800"
+                                      ? "bg-amber-100 text-amber-800 border border-amber-200"
+                                      : "bg-rose-100 text-rose-800 border border-rose-200"
                               }`}
                             >
                               {req.status === "HOSTED" && <Globe size={11} />}
@@ -381,13 +383,13 @@ function DeploymentsPage() {
                           {req.status === "HOSTED" && (
                             <div className="flex flex-col gap-1 mt-1">
                               {req.expires_at && (
-                                <span className="text-[11px] text-indigo-700 font-medium flex items-center gap-1">
+                                <span className="text-[11px] text-indigo-700 font-semibold flex items-center gap-1">
                                   <Calendar size={11} /> Expires: {new Date(req.expires_at).toLocaleDateString()}
                                 </span>
                               )}
                               {liveUrl && (
                                 <div className="flex items-center gap-1.5 mt-0.5">
-                                  <span className="text-[10px] text-black/40 font-mono truncate max-w-[220px]">
+                                  <span className="text-[10px] text-black/50 font-mono truncate max-w-[200px]">
                                     {liveUrl}
                                   </span>
                                   <button
@@ -410,7 +412,7 @@ function DeploymentsPage() {
                         </div>
                       </td>
 
-                      <td className="px-6 py-4 text-right pr-6">
+                      <td className="px-5 py-4 text-right pr-5">
                         <div className="flex items-center justify-end gap-2 flex-wrap">
                           {/* Preview Link */}
                           {previewUrl && (
@@ -418,7 +420,7 @@ function DeploymentsPage() {
                               href={previewUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="p-2 text-black/50 hover:text-black hover:bg-black/5 rounded-lg transition-colors"
+                              className="p-2 text-black/50 hover:text-black hover:bg-black/5 rounded-xl transition-colors shadow-2xs"
                               title="Preview Full Design"
                             >
                               <Eye size={15} />
@@ -430,13 +432,13 @@ function DeploymentsPage() {
                             <>
                               <button
                                 onClick={() => setRejectId(req.id)}
-                                className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors"
+                                className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl transition-colors"
                               >
                                 Reject
                               </button>
                               <button
                                 onClick={() => handleApprove(req)}
-                                className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors shadow-xs"
+                                className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors shadow-xs"
                               >
                                 Approve
                               </button>
@@ -451,7 +453,7 @@ function DeploymentsPage() {
                                 placeholder="Rejection reason..."
                                 value={rejectReason}
                                 onChange={(e) => setRejectReason(e.target.value)}
-                                className="text-xs border border-rose-300 rounded-lg px-2.5 py-1.5 outline-none focus:border-rose-500 w-44"
+                                className="text-xs border border-rose-300 rounded-xl px-2.5 py-1.5 outline-none focus:border-rose-500 w-40"
                                 autoFocus
                               />
                               <button
@@ -465,7 +467,7 @@ function DeploymentsPage() {
                               </button>
                               <button
                                 onClick={() => handleReject(req.id)}
-                                className="text-xs bg-rose-600 text-white font-bold px-3 py-1.5 rounded-lg hover:bg-rose-700"
+                                className="text-xs bg-rose-600 text-white font-bold px-3 py-1.5 rounded-xl hover:bg-rose-700 shadow-2xs"
                               >
                                 Confirm
                               </button>
@@ -476,18 +478,18 @@ function DeploymentsPage() {
                           {req.status === "APPROVED" && hostId !== req.id && (
                             <button
                               onClick={() => setHostId(req.id)}
-                              className="px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-xs flex items-center gap-1.5"
+                              className="px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-xs flex items-center gap-1.5"
                             >
                               <Globe size={13} /> Host Live
                             </button>
                           )}
 
                           {hostId === req.id && (
-                            <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-200 p-2 rounded-xl">
+                            <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-200 p-2 rounded-2xl">
                               <select
                                 value={hostDuration}
                                 onChange={(e) => setHostDuration(e.target.value)}
-                                className="text-xs bg-white border border-indigo-200 rounded-lg px-2 py-1 outline-none"
+                                className="text-xs bg-white border border-indigo-200 rounded-lg px-2 py-1 outline-none font-semibold"
                               >
                                 <option value="7">7 Days</option>
                                 <option value="30">30 Days</option>
@@ -502,9 +504,9 @@ function DeploymentsPage() {
                               </button>
                               <button
                                 onClick={() => handleHost(req.id, req.invitation_id, req)}
-                                className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1 rounded-lg"
+                                className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1 rounded-lg shadow-2xs"
                               >
-                                Confirm Host
+                                Confirm
                               </button>
                             </div>
                           )}
@@ -525,17 +527,17 @@ function DeploymentsPage() {
                                   customMessage: `Dear ${req.clientName || "Valued Couple"},\n\nCongratulations! We are delighted to share that your luxury wedding invitation for ${req.invitation?.couple_names || "your wedding"} is now officially HOSTED & LIVE!\n\nGuest Invitation Link: ${liveUrl}\n\nYour guests can now view the full invitation, interactive schedule, and submit RSVPs.\n\nWarm regards,\nCandyInvito Studio`,
                                 })
                               }
-                              className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#201814] bg-[#DCA963]/20 hover:bg-[#DCA963] hover:text-[#201814] px-3 py-1.5 rounded-lg transition-colors"
+                              className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#201814] bg-[#DCA963]/20 hover:bg-[#DCA963] hover:text-[#201814] px-3 py-1.5 rounded-xl transition-all shadow-2xs"
                               title="Send or share congratulations message to client"
                             >
-                              <Sparkles size={12} className="text-[#DCA963]" /> Send Congratulations
+                              <Sparkles size={12} className="text-[#DCA963]" /> Send Congrats
                             </button>
                           )}
 
                           {/* Option to Delete / Take down deployment request */}
                           <button
                             onClick={() => handleDeleteDeployment(req.id, isHosted)}
-                            className="p-1.5 text-black/40 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                            className="p-1.5 text-black/40 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
                             title={isHosted ? "Delete & Unhost Live Invitation" : "Delete Deployment Request"}
                           >
                             <Trash2 size={15} />
@@ -554,18 +556,18 @@ function DeploymentsPage() {
       {/* Send Congratulations to Client Modal */}
       {notifyModalData && (
         <Dialog open={!!notifyModalData} onOpenChange={() => setNotifyModalData(null)}>
-          <DialogContent className="sm:max-w-lg bg-white rounded-2xl p-6">
+          <DialogContent className="sm:max-w-lg bg-white rounded-3xl p-6 shadow-2xl border border-black/10">
             <DialogHeader>
-              <DialogTitle className="font-serif text-xl text-[#201814] flex items-center gap-2">
+              <DialogTitle className="font-serif text-xl font-bold text-[#201814] flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-[#DCA963]" /> Send Congratulations to Client
               </DialogTitle>
-              <DialogDescription className="text-xs text-black/60">
+              <DialogDescription className="text-xs text-black/60 pt-1">
                 Send congratulations and the official hosted link to the couple.
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-3">
-              <div className="bg-[#FAF9F6] p-4 rounded-xl border border-black/5 space-y-2">
+              <div className="bg-[#FAF9F6] p-4 rounded-2xl border border-black/5 space-y-2">
                 <div className="flex justify-between text-xs">
                   <span className="text-black/50 uppercase font-bold tracking-wider">Client Email:</span>
                   <span className="font-semibold text-[#201814]">{notifyModalData.clientEmail || "Not specified"}</span>
@@ -574,8 +576,8 @@ function DeploymentsPage() {
                   <span className="text-black/50 uppercase font-bold tracking-wider">Couple Title:</span>
                   <span className="font-semibold text-[#201814]">{notifyModalData.coupleNames}</span>
                 </div>
-                <div className="flex flex-col gap-1 text-xs pt-1 border-t border-black/5">
-                  <span className="text-black/50 uppercase font-bold tracking-wider">Hosted Invitation URL:</span>
+                <div className="flex flex-col gap-1 text-xs pt-2 border-t border-black/5">
+                  <span className="text-black/50 uppercase font-bold tracking-wider">Hosted URL:</span>
                   <span className="font-mono font-semibold text-indigo-900 break-all">{notifyModalData.liveUrl}</span>
                 </div>
               </div>
@@ -593,7 +595,7 @@ function DeploymentsPage() {
                       prev ? { ...prev, customMessage: e.target.value } : null,
                     )
                   }
-                  className="w-full text-xs font-sans bg-[#FAF9F6] border border-black/10 rounded-xl p-3 outline-none focus:border-[#DCA963]"
+                  className="w-full text-xs font-sans bg-[#FAF9F6] border border-black/10 rounded-2xl p-3 outline-none focus:border-[#DCA963]"
                 />
               </div>
             </div>
@@ -611,14 +613,14 @@ function DeploymentsPage() {
                   onClick={() => {
                     copyToClipboard(notifyModalData.customMessage || "");
                   }}
-                  className="bg-[#201814] hover:bg-[#382B23] text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5"
+                  className="bg-[#141210] hover:bg-[#382B23] text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-2xs"
                 >
                   <Copy size={13} /> Copy Message
                 </Button>
                 {notifyModalData.clientEmail && (
                   <a
                     href={`mailto:${notifyModalData.clientEmail}?subject=${encodeURIComponent(`🎉 Congratulations! Your Wedding Invitation is Live! — CandyInvito`)}&body=${encodeURIComponent(notifyModalData.customMessage || "")}`}
-                    className="bg-[#DCA963] hover:bg-[#C99750] text-[#201814] font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+                    className="bg-[#DCA963] hover:bg-[#C99750] text-[#141210] font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
                   >
                     <Mail size={13} /> Open Email
                   </a>
