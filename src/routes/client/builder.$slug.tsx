@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Save,
@@ -22,6 +22,9 @@ import {
   Video,
   Play,
   VolumeX,
+  Edit3,
+  MessageCircle,
+  Share2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../../lib/auth-context";
@@ -33,11 +36,16 @@ import {
   TemplateControl,
 } from "../../templates/TemplateRegistry";
 import { BuilderProvider, EventIcon, AVAILABLE_EVENT_ICONS } from "../../components/builder";
-import { invitationRepository, deploymentRequestRepository } from "../../lib/repositories";
+import {
+  invitationRepository,
+  deploymentRequestRepository,
+  generateSlugFromNames,
+} from "../../lib/repositories";
 import { getByPath, setByPath } from "../../lib/fieldPath";
 import { Invitation } from "../../lib/types";
 import { normalizeInvitationContent } from "../../lib/migration";
 import { canonicalSections } from "../../templates/CanonicalSections";
+import { WeddingShareModal } from "../../components/premium/WeddingShareModal";
 
 import { createPortal } from "react-dom";
 
@@ -99,6 +107,9 @@ function ClientBuilder() {
   const [expandedSection, setExpandedSection] = useState<string>("");
   const [showThemeSwitcher, setShowThemeSwitcher] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState("");
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved" | "db_error">("saved");
 
   const hasHydrated = useRef(false);
@@ -134,6 +145,7 @@ function ClientBuilder() {
         }
 
         setInvitationRecord(data);
+        setEditedTitle(data.couple_names || data.title || "Wedding Invitation");
         hasHydrated.current = true;
       } catch (err) {
         console.error("Error loading invitation:", err);
@@ -169,9 +181,26 @@ function ClientBuilder() {
     if (!recordToSave) return;
     const currentRevision = ++saveRevision.current;
     
+    // Auto-extract couple names from content if present
+    const p1 = recordToSave.content?.couple?.partner1 || recordToSave.content?.hero?.groomName || "";
+    const p2 = recordToSave.content?.couple?.partner2 || recordToSave.content?.hero?.partner2 || "";
+    let extractedNames = recordToSave.couple_names;
+    if (p1 && p2) {
+      extractedNames = `${p1} & ${p2}`;
+    } else if (p1) {
+      extractedNames = p1;
+    } else if (recordToSave.content?.hero?.title) {
+      extractedNames = recordToSave.content.hero.title;
+    }
+
     try {
       setSaveStatus("saving");
-      await invitationRepository.update(recordToSave.id, { content: recordToSave.content, template_id: recordToSave.template_id });
+      await invitationRepository.update(recordToSave.id, {
+        content: recordToSave.content,
+        template_id: recordToSave.template_id,
+        couple_names: extractedNames,
+        title: extractedNames,
+      });
       
       if (saveRevision.current === currentRevision) {
         setSaveStatus("saved");
@@ -445,6 +474,50 @@ function ClientBuilder() {
 
           <div className="hidden lg:block h-4 w-px bg-black/10 mx-1"></div>
 
+          {/* Editable Invitation Name */}
+          <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-black/5 rounded-xl border border-black/5">
+            {isEditingTitle ? (
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="text"
+                  value={editedTitle}
+                  onChange={(e) => setEditedTitle(e.target.value)}
+                  className="text-xs font-serif font-bold text-[#201814] bg-white border border-[#DCA963] rounded-lg px-2 py-0.5 outline-none max-w-[180px]"
+                  autoFocus
+                />
+                <button
+                  onClick={() => {
+                    setIsEditingTitle(false);
+                    if (editedTitle.trim()) {
+                      setInvitationRecord((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              couple_names: editedTitle.trim(),
+                              title: editedTitle.trim(),
+                            }
+                          : prev,
+                      );
+                      setSaveStatus("unsaved");
+                    }
+                  }}
+                  className="text-[10px] bg-[#141210] text-white px-2 py-0.5 rounded font-bold uppercase"
+                >
+                  Done
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setIsEditingTitle(true)}
+                className="flex items-center gap-1.5 text-xs font-serif font-bold text-[#201814] hover:text-[#DCA963] transition-colors"
+                title="Click to rename wedding invitation"
+              >
+                <span>{invitationRecord?.couple_names || invitationRecord?.title || "Wedding Invitation"}</span>
+                <Edit3 size={12} className="text-black/40" />
+              </button>
+            )}
+          </div>
+
           <div className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-black/50">
             {saveStatus === "saving" ? (
               <Loader2 size={12} className="animate-spin text-[#DCA963]" />
@@ -507,6 +580,14 @@ function ClientBuilder() {
               </div>
             )}
           </div>
+
+          <button
+            onClick={() => setShowShareModal(true)}
+            className="hidden sm:flex items-center gap-1.5 bg-[#DCA963]/15 hover:bg-[#DCA963] hover:text-[#141210] text-[#201814] border border-[#DCA963]/30 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors shadow-2xs"
+            title="Preview and share WhatsApp invitation announcement"
+          >
+            <MessageCircle size={13} /> <span className="hidden lg:inline">Share Text</span>
+          </button>
 
           <button
             onClick={() => setIsPreviewMode(true)}
@@ -710,6 +791,14 @@ function ClientBuilder() {
           </div>
         </div>
       </div>
+
+      {showShareModal && (
+        <WeddingShareModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          invitation={invitationRecord}
+        />
+      )}
     </div>
   );
 }

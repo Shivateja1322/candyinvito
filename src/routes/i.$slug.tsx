@@ -38,7 +38,7 @@ const serverGetPublicInvitation = createServerFn({ method: "POST" })
     const { data: inv, error: invErr } = await client
       .from("invitations")
       .select("*")
-      .eq("slug", slug)
+      .or(`slug.eq.${slug},id.eq.${slug}`)
       .maybeSingle();
 
     if (!inv || invErr) {
@@ -125,7 +125,7 @@ function InvitationRenderer() {
       const { data: inv, error: fetchErr } = await supabase
         .from("invitations")
         .select("*")
-        .eq("slug", slug)
+        .or(`slug.eq.${slug},id.eq.${slug}`)
         .maybeSingle();
 
       if (inv) {

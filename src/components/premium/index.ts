@@ -1,4 +1,4 @@
-﻿export { Reveal, StaggerContainer, StaggerItem, type RevealAnimation } from "./motion/Reveal";
+export { Reveal, StaggerContainer, StaggerItem, type RevealAnimation } from "./motion/Reveal";
 export { MediaImage, type MediaImageProps } from "./media/MediaImage";
 export { BackgroundVideo, type BackgroundVideoProps } from "./media/BackgroundVideo";
 export { HeroMedia, type HeroMediaType, type HeroMediaProps } from "./media/HeroMedia";
@@ -8,3 +8,4 @@ export { BackgroundAudio, type BackgroundAudioProps } from "./audio/BackgroundAu
 export { Typography, type TextVariant, type TypographyProps } from "./typography/Typography";
 export { Section, SectionHeading, type SectionProps, type SectionHeadingProps } from "./section/Section";
 export { RsvpModal, type RsvpModalProps } from "./rsvp/RsvpModal";
+export { WeddingShareModal } from "./WeddingShareModal";

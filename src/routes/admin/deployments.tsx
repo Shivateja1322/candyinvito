@@ -31,6 +31,10 @@ import {
 } from "../../components/ui/dialog";
 import { Button } from "../../components/ui/button";
 import { DeploymentRequest, Invitation } from "../../lib/types";
+import {
+  formatWeddingShareMessage,
+  extractWeddingShareDetails,
+} from "../../lib/weddingShare";
 
 export const Route = createFileRoute("/admin/deployments")({
   component: DeploymentsPage,
@@ -150,13 +154,20 @@ function DeploymentsPage() {
 
       // Open congratulations notification dialog to easily send live link to the client
       const liveUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/i/${reqItem?.invitation?.slug || ""}`;
+      const shareDetails = extractWeddingShareDetails(
+        reqItem?.invitation,
+        typeof window !== "undefined" ? window.location.origin : "",
+      );
+      const formattedAnnouncement = formatWeddingShareMessage(shareDetails);
+      const customMessage = `Dear ${reqItem?.clientName || "Valued Couple"},\n\nCongratulations! We are delighted to share that your luxury wedding invitation for ${shareDetails.coupleNames} is now officially HOSTED & LIVE!\n\nHere is your ready-to-send guest announcement:\n----------------------------------------\n${formattedAnnouncement}\n----------------------------------------\n\nYour guests can now view your full invitation, interactive schedule, and submit RSVPs.\n\nWarm regards,\nCandyInvito Studio`;
+
       setNotifyModalData({
         requestId: reqId,
         clientEmail: reqItem?.clientEmail || "",
         clientName: reqItem?.clientName || "Valued Couple",
-        coupleNames: reqItem?.invitation?.couple_names || reqItem?.invitation?.title || "Wedding",
+        coupleNames: shareDetails.coupleNames,
         liveUrl,
-        customMessage: `Dear ${reqItem?.clientName || "Valued Couple"},\n\nCongratulations! We are delighted to share that your luxury wedding invitation for ${reqItem?.invitation?.couple_names || "your wedding"} is now officially HOSTED & LIVE!\n\nGuest Invitation Link: ${liveUrl}\n\nYour guests can now view the full invitation, interactive schedule, and submit RSVPs.\n\nWarm regards,\nCandyInvito Studio`,
+        customMessage,
       });
     } catch (err: any) {
       toast.error(err.message || "Failed to host invitation.");
@@ -514,19 +525,23 @@ function DeploymentsPage() {
                           {/* Action when HOSTED -> Send Congratulations to Client button */}
                           {req.status === "HOSTED" && (
                             <button
-                              onClick={() =>
+                              onClick={() => {
+                                const shareDetails = extractWeddingShareDetails(
+                                  req.invitation,
+                                  typeof window !== "undefined" ? window.location.origin : "",
+                                );
+                                const formattedAnnouncement = formatWeddingShareMessage(shareDetails);
+                                const customMessage = `Dear ${req.clientName || "Valued Couple"},\n\nCongratulations! We are delighted to share that your luxury wedding invitation for ${shareDetails.coupleNames} is now officially HOSTED & LIVE!\n\nHere is your ready-to-send guest announcement:\n----------------------------------------\n${formattedAnnouncement}\n----------------------------------------\n\nYour guests can now view your full invitation, interactive schedule, and submit RSVPs.\n\nWarm regards,\nCandyInvito Studio`;
+
                                 setNotifyModalData({
                                   requestId: req.id,
                                   clientEmail: req.clientEmail || "",
                                   clientName: req.clientName || "Valued Couple",
-                                  coupleNames:
-                                    req.invitation?.couple_names ||
-                                    req.invitation?.title ||
-                                    "Wedding",
+                                  coupleNames: shareDetails.coupleNames,
                                   liveUrl,
-                                  customMessage: `Dear ${req.clientName || "Valued Couple"},\n\nCongratulations! We are delighted to share that your luxury wedding invitation for ${req.invitation?.couple_names || "your wedding"} is now officially HOSTED & LIVE!\n\nGuest Invitation Link: ${liveUrl}\n\nYour guests can now view the full invitation, interactive schedule, and submit RSVPs.\n\nWarm regards,\nCandyInvito Studio`,
-                                })
-                              }
+                                  customMessage,
+                                });
+                              }}
                               className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#201814] bg-[#DCA963]/20 hover:bg-[#DCA963] hover:text-[#201814] px-3 py-1.5 rounded-xl transition-all shadow-2xs"
                               title="Send or share congratulations message to client"
                             >

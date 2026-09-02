@@ -2,7 +2,11 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth-context";
-import { invitationRepository, deploymentRequestRepository } from "../../lib/repositories";
+import {
+  invitationRepository,
+  deploymentRequestRepository,
+  generateSlugFromNames,
+} from "../../lib/repositories";
 import {
   CalendarHeart,
   Plus,
@@ -22,10 +26,21 @@ import {
   ArrowRight,
   Loader2,
   Layers,
+  MessageCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { themeCapabilities } from "../../templates/TemplateRegistry";
 import { Invitation, DeploymentRequest } from "../../lib/types";
+import { WeddingShareModal } from "../../components/premium/WeddingShareModal";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "../../components/ui/dialog";
+import { Button } from "../../components/ui/button";
 
 export const Route = createFileRoute("/client/")({
   component: ClientDashboard,
@@ -39,6 +54,14 @@ function ClientDashboard() {
   const [deploymentReqs, setDeploymentReqs] = useState<Record<string, DeploymentRequest>>({});
   const [loading, setLoading] = useState(true);
   const [selectedDrafts, setSelectedDrafts] = useState<string[]>([]);
+
+  // Share Modal State
+  const [shareModalInv, setShareModalInv] = useState<any>(null);
+
+  // Rename Modal State
+  const [renameInv, setRenameInv] = useState<Invitation | null>(null);
+  const [newTitle, setNewTitle] = useState("");
+  const [isRenaming, setIsRenaming] = useState(false);
 
   const loadDashboardData = async () => {
     if (!user) return;
@@ -145,6 +168,34 @@ function ClientDashboard() {
     }
   };
 
+  const handleSaveRename = async () => {
+    if (!renameInv || !newTitle.trim()) return;
+    setIsRenaming(true);
+    try {
+      const updatedSlug = generateSlugFromNames(newTitle.trim());
+      await invitationRepository.update(renameInv.id, {
+        couple_names: newTitle.trim(),
+        title: newTitle.trim(),
+        slug: updatedSlug,
+      });
+
+      setInvitations((prev) =>
+        prev.map((i) =>
+          i.id === renameInv.id
+            ? { ...i, couple_names: newTitle.trim(), title: newTitle.trim(), slug: updatedSlug }
+            : i,
+        ),
+      );
+
+      toast.success(`Invitation renamed to "${newTitle.trim()}"!`);
+      setRenameInv(null);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to rename invitation.");
+    } finally {
+      setIsRenaming(false);
+    }
+  };
+
   const copyToClipboard = async (text: string) => {
     if (!text) {
       toast.error("No link available to copy.");
@@ -158,23 +209,17 @@ function ClientDashboard() {
       }
     } catch (e) {}
 
-    // Fallback using textarea execCommand
     try {
       const textArea = document.createElement("textarea");
       textArea.value = text;
       textArea.style.position = "fixed";
       textArea.style.left = "-999999px";
-      textArea.style.top = "-999999px";
       document.body.appendChild(textArea);
       textArea.focus();
       textArea.select();
-      const successful = document.execCommand("copy");
+      document.execCommand("copy");
       document.body.removeChild(textArea);
-      if (successful) {
-        toast.success("Link copied to clipboard!");
-      } else {
-        toast.error("Could not copy link automatically. Please copy it manually.");
-      }
+      toast.success("Link copied to clipboard!");
     } catch (err) {
       toast.error("Failed to copy link.");
     }
@@ -184,7 +229,7 @@ function ClientDashboard() {
   const hostedCount = Object.values(deploymentReqs).filter((r) => r.status === "HOSTED").length;
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8 animate-fade-in font-sans pb-12">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8 animate-fade-in font-sans pb-16">
       {/* Header */}
       <header className="pb-6 border-b border-black/10 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
@@ -325,6 +370,15 @@ function ClientDashboard() {
               ).length,
             };
 
+            const coupleDisplayName =
+              invitation.couple_names && invitation.couple_names !== "New Couple"
+                ? invitation.couple_names
+                : invitation.title && invitation.title !== "New Couple"
+                  ? invitation.title
+                  : (invitation.content?.couple?.partner1 && invitation.content?.couple?.partner2
+                      ? `${invitation.content.couple.partner1} ❤️ ${invitation.content.couple.partner2}`
+                      : "Wedding Invitation");
+
             return (
               <div
                 key={invitation.id}
@@ -377,9 +431,21 @@ function ClientDashboard() {
                         </span>
                       </div>
 
-                      <h2 className="text-xl sm:text-2xl font-serif font-bold text-[#201814]">
-                        {invitation.couple_names || invitation.title || "Wedding Invitation"}
-                      </h2>
+                      <div className="flex items-center gap-3">
+                        <h2 className="text-xl sm:text-2xl font-serif font-bold text-[#201814]">
+                          {coupleDisplayName}
+                        </h2>
+                        <button
+                          onClick={() => {
+                            setRenameInv(invitation);
+                            setNewTitle(invitation.couple_names || invitation.title || "");
+                          }}
+                          className="p-1 text-black/40 hover:text-[#DCA963] rounded-lg transition-colors"
+                          title="Rename Invitation"
+                        >
+                          <Edit3 size={14} />
+                        </button>
+                      </div>
                       <p className="text-xs text-black/40 font-mono mt-1">/i/{invitation.slug}</p>
                     </div>
                   </div>
@@ -396,44 +462,6 @@ function ClientDashboard() {
                 </div>
 
                 <div className="p-6 sm:p-8 space-y-6">
-                  {/* Hosted Celebration Banner */}
-                  {isHosted && (
-                    <div className="bg-gradient-to-r from-indigo-50/80 to-purple-50/80 border border-indigo-200 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3">
-                      <div className="flex items-center gap-2 text-indigo-950">
-                        <Sparkles className="w-4 h-4 text-[#DCA963]" />
-                        <p className="text-xs font-bold uppercase tracking-widest">
-                          Your Wedding Invitation is Officially Live!
-                        </p>
-                      </div>
-                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-white border border-indigo-100 rounded-xl p-2.5">
-                        <span className="text-xs font-mono text-indigo-900 font-semibold truncate flex-1 py-1">
-                          {publicUrl}
-                        </span>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <button
-                            onClick={() => copyToClipboard(publicUrl)}
-                            className="flex-1 sm:flex-none bg-[#141210] text-white hover:bg-[#DCA963] hover:text-[#141210] px-3.5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1 shadow-2xs"
-                          >
-                            <Copy size={12} /> Copy Link
-                          </button>
-                          <a
-                            href={publicUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex-1 sm:flex-none bg-indigo-600 text-white hover:bg-indigo-700 px-3.5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1 shadow-2xs"
-                          >
-                            <ExternalLink size={12} /> Open Live
-                          </a>
-                        </div>
-                      </div>
-                      {req?.expires_at && (
-                        <p className="text-[11px] text-indigo-700 font-medium">
-                          Active & Hosted until: {new Date(req.expires_at).toLocaleDateString()}
-                        </p>
-                      )}
-                    </div>
-                  )}
-
                   {/* Actions Row */}
                   <div className="flex flex-wrap items-center gap-3">
                     <Link
@@ -449,8 +477,15 @@ function ClientDashboard() {
                       rel="noreferrer"
                       className="inline-flex items-center gap-2 bg-black/5 hover:bg-black/10 text-[#201814] px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors shadow-2xs"
                     >
-                      <Eye size={14} /> Private Preview
+                      <Eye size={14} /> Preview
                     </a>
+
+                    <button
+                      onClick={() => setShareModalInv(invitation)}
+                      className="inline-flex items-center gap-2 bg-[#DCA963]/15 hover:bg-[#DCA963] hover:text-[#141210] text-[#201814] border border-[#DCA963]/30 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-2xs"
+                    >
+                      <MessageCircle size={14} /> Share Announcement Text
+                    </button>
 
                     <button
                       onClick={() => copyToClipboard(publicUrl)}
@@ -480,6 +515,70 @@ function ClientDashboard() {
             );
           })}
         </div>
+      )}
+
+      {/* Rename Invitation Dialog */}
+      {renameInv && (
+        <Dialog open={!!renameInv} onOpenChange={() => setRenameInv(null)}>
+          <DialogContent className="sm:max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-black/10">
+            <DialogHeader>
+              <DialogTitle className="font-serif text-2xl font-bold text-[#201814] flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-[#DCA963]" /> Rename Invitation
+              </DialogTitle>
+              <DialogDescription className="text-xs text-black/60">
+                Give your wedding stationery a distinct couple title and customized URL slug.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-3">
+              <div>
+                <label className="text-[10px] font-bold uppercase tracking-wider text-black/50 block mb-1.5">
+                  Couple Name / Title
+                </label>
+                <input
+                  type="text"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  placeholder="e.g. Akhila ❤️ Naveen"
+                  className="w-full text-sm font-sans bg-[#FAF9F6] border border-black/10 rounded-xl p-3 outline-none focus:border-[#DCA963]"
+                  autoFocus
+                />
+              </div>
+              <p className="text-[11px] text-black/50">
+                New link will be:{" "}
+                <span className="font-mono text-indigo-950 font-semibold">
+                  /i/{generateSlugFromNames(newTitle)}
+                </span>
+              </p>
+            </div>
+
+            <DialogFooter className="flex gap-2 justify-end pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setRenameInv(null)}
+                className="rounded-xl text-xs font-bold uppercase tracking-wider"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveRename}
+                disabled={isRenaming || !newTitle.trim()}
+                className="bg-[#141210] hover:bg-[#DCA963] hover:text-[#141210] text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-xs"
+              >
+                {isRenaming ? "Saving..." : "Save Title"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Share Modal */}
+      {shareModalInv && (
+        <WeddingShareModal
+          isOpen={!!shareModalInv}
+          onClose={() => setShareModalInv(null)}
+          invitation={shareModalInv}
+        />
       )}
     </div>
   );

@@ -19,8 +19,14 @@ import {
   Trash2,
   MessageCircle,
   Share2,
+  Edit3,
 } from "lucide-react";
 import { DeploymentRequest, Invitation } from "../../lib/types";
+import {
+  formatWeddingShareMessage,
+  extractWeddingShareDetails,
+} from "../../lib/weddingShare";
+import { WeddingShareModal } from "../../components/premium/WeddingShareModal";
 
 export const Route = createFileRoute("/client/deployments")({
   component: ClientDeploymentsPage,
@@ -32,6 +38,9 @@ function ClientDeploymentsPage() {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [requestingId, setRequestingId] = useState<string | null>(null);
+
+  // Modal for customizing/sharing wedding announcement text
+  const [selectedShareInv, setSelectedShareInv] = useState<any>(null);
 
   const fetchData = async () => {
     if (!user) return;
@@ -117,12 +126,12 @@ function ClientDeploymentsPage() {
     }
   };
 
-  const copyToClipboard = async (text: string) => {
+  const copyToClipboard = async (text: string, label: string = "Link") => {
     if (!text) return;
     try {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(text);
-        toast.success("Guest link copied to clipboard!");
+        toast.success(`${label} copied to clipboard!`);
         return;
       }
     } catch (e) {}
@@ -132,15 +141,14 @@ function ClientDeploymentsPage() {
       textArea.value = text;
       textArea.style.position = "fixed";
       textArea.style.left = "-999999px";
-      textArea.style.top = "-999999px";
       document.body.appendChild(textArea);
       textArea.focus();
       textArea.select();
       document.execCommand("copy");
       document.body.removeChild(textArea);
-      toast.success("Guest link copied to clipboard!");
+      toast.success(`${label} copied to clipboard!`);
     } catch (err) {
-      toast.error("Failed to copy link.");
+      toast.error("Failed to copy.");
     }
   };
 
@@ -158,7 +166,7 @@ function ClientDeploymentsPage() {
             Deployments & Hosting
           </h1>
           <p className="text-black/50 text-xs sm:text-sm mt-1">
-            Track hosting approvals, live guest invitation links, and social sharing.
+            Track hosting approvals, live guest invitation links, and luxury social announcements.
           </p>
         </div>
         <Link
@@ -169,88 +177,114 @@ function ClientDeploymentsPage() {
         </Link>
       </header>
 
-      {/* Prominent Congratulations Cards for Hosted Invitations */}
+      {/* Prominent Luminous Luxury Celebration Cards for Hosted Invitations */}
       {hostedRequests.length > 0 && (
         <div className="space-y-6">
           {hostedRequests.map((hostedReq) => {
-            const invSlug = hostedReq.invitation?.slug;
-            const coupleNames =
-              hostedReq.invitation?.couple_names ||
-              hostedReq.invitation?.title ||
-              "Your Wedding";
+            const inv = hostedReq.invitation;
+            const invSlug = inv?.slug;
             const liveUrl = invSlug
               ? `${typeof window !== "undefined" ? window.location.origin : ""}/i/${invSlug}`
               : "";
-            const whatsappText = `🎉 Join us in celebrating our wedding! View our digital invitation and RSVP here: ${liveUrl}`;
+
+            const shareDetails = extractWeddingShareDetails(inv, typeof window !== "undefined" ? window.location.origin : "");
+            const formattedMessage = formatWeddingShareMessage(shareDetails);
 
             return (
               <div
                 key={`congrats-${hostedReq.id}`}
-                className="bg-gradient-to-br from-[#141210] via-[#201A16] to-[#141210] text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-[#DCA963]/30 relative overflow-hidden"
+                className="bg-gradient-to-br from-white via-[#FCFAF7] to-[#F5EFEB] text-[#201814] rounded-3xl p-6 sm:p-8 shadow-sm border-2 border-[#DCA963]/30 relative overflow-hidden transition-all duration-300"
               >
-                <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-                  <Sparkles size={160} className="text-[#DCA963]" />
+                {/* Background Watermark Accent */}
+                <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none text-[#DCA963]">
+                  <Sparkles size={180} />
                 </div>
 
-                <div className="relative z-10 space-y-5">
-                  <div className="flex items-center gap-2.5">
-                    <span className="bg-[#DCA963] text-[#141210] text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
-                      <Sparkles size={11} /> Hosted & Live
-                    </span>
-                    {hostedReq.expires_at && (
-                      <span className="text-xs text-white/60 font-medium">
-                        Valid until {new Date(hostedReq.expires_at).toLocaleDateString()}
+                <div className="relative z-10 space-y-6">
+                  {/* Top Status Badges */}
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <span className="bg-[#DCA963]/20 text-[#201814] border border-[#DCA963]/40 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
+                        <Sparkles size={11} className="text-[#DCA963]" /> Hosted & Live
                       </span>
-                    )}
+                      {hostedReq.expires_at && (
+                        <span className="text-xs text-black/60 font-semibold">
+                          Valid until {new Date(hostedReq.expires_at).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={() => handleDeleteDeployment(hostedReq.id, true)}
+                      className="text-xs text-black/40 hover:text-rose-600 flex items-center gap-1 transition-colors"
+                      title="Delete & Unhost Live Invitation"
+                    >
+                      <Trash2 size={13} /> Unhost
+                    </button>
                   </div>
 
+                  {/* Celebration Title */}
                   <div>
-                    <h2 className="text-2xl sm:text-3xl font-serif font-bold text-white mb-2">
-                      🎉 Congratulations, {coupleNames}!
+                    <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[#201814] mb-2 tracking-tight">
+                      🎉 Congratulations, {shareDetails.coupleNames}!
                     </h2>
-                    <p className="text-white/80 text-xs sm:text-sm max-w-2xl leading-relaxed">
-                      We are delighted to share that your luxury wedding invitation is officially
-                      hosted and live! Your guests can now view your custom design, photo gallery,
-                      interactive schedule, and submit their RSVPs.
+                    <p className="text-black/70 text-xs sm:text-sm max-w-2xl leading-relaxed">
+                      Your luxury wedding invitation is officially hosted and accessible to your guests.
+                      You can share the ready-to-send invitation announcement message below via WhatsApp or SMS.
                     </p>
                   </div>
 
-                  {/* Live Link Box & Actions */}
-                  <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-[#DCA963]">
-                        Official Guest Invitation Link
+                  {/* Formatted WhatsApp Announcement Preview Box */}
+                  <div className="bg-white border border-[#DCA963]/30 rounded-2xl p-5 shadow-xs space-y-4">
+                    <div className="flex items-center justify-between border-b border-black/5 pb-2">
+                      <span className="text-[10px] uppercase font-bold tracking-widest text-[#DCA963] flex items-center gap-1">
+                        <MessageCircle size={12} /> Ready-to-Send WhatsApp & SMS Announcement
                       </span>
-                      <span className="font-mono text-xs sm:text-sm text-white truncate max-w-lg mt-0.5">
-                        {liveUrl}
-                      </span>
+                      <button
+                        onClick={() => setSelectedShareInv(inv)}
+                        className="text-[11px] font-bold text-[#201814] hover:text-[#DCA963] flex items-center gap-1 uppercase tracking-wider transition-colors"
+                      >
+                        <Edit3 size={12} /> Customize Text
+                      </button>
                     </div>
 
-                    <div className="flex items-center gap-2 flex-wrap shrink-0">
+                    <pre className="whitespace-pre-wrap font-sans text-xs sm:text-sm text-[#201814] leading-relaxed bg-[#FAF9F6] p-4 rounded-xl border border-black/5 select-text">
+                      {formattedMessage}
+                    </pre>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap items-center gap-2.5 pt-1">
                       <button
-                        onClick={() => copyToClipboard(liveUrl)}
-                        className="flex-1 sm:flex-none bg-[#DCA963] hover:bg-[#C99750] text-[#141210] font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+                        onClick={() => copyToClipboard(formattedMessage, "Invitation announcement")}
+                        className="bg-[#141210] hover:bg-[#DCA963] hover:text-[#141210] text-white font-bold px-4 py-2.5 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-2xs"
                       >
-                        <Copy size={13} /> Copy Link
+                        <Copy size={13} /> Copy Invitation Text
                       </button>
 
                       <a
-                        href={`https://api.whatsapp.com/send?text=${encodeURIComponent(whatsappText)}`}
+                        href={`https://api.whatsapp.com/send?text=${encodeURIComponent(formattedMessage)}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 shadow-sm"
-                        title="Share via WhatsApp"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs uppercase tracking-wider transition-colors flex items-center gap-1.5 shadow-2xs"
+                        title="Share directly on WhatsApp"
                       >
-                        <MessageCircle size={13} /> WhatsApp
+                        <MessageCircle size={14} /> Send via WhatsApp
                       </a>
+
+                      <button
+                        onClick={() => copyToClipboard(liveUrl, "Link")}
+                        className="bg-white hover:bg-black/5 text-[#201814] border border-black/10 font-bold px-4 py-2.5 rounded-xl text-xs uppercase tracking-wider transition-colors flex items-center gap-1.5 shadow-2xs"
+                      >
+                        <Copy size={13} /> Copy Link Only
+                      </button>
 
                       <a
                         href={liveUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex-1 sm:flex-none bg-white/20 hover:bg-white/30 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5"
+                        className="bg-[#DCA963] hover:bg-[#C99750] text-[#141210] font-bold px-4 py-2.5 rounded-xl text-xs uppercase tracking-wider transition-colors flex items-center gap-1.5 shadow-2xs ml-auto"
                       >
-                        <ExternalLink size={13} /> View Live
+                        <ExternalLink size={13} /> View Live Invitation
                       </a>
                     </div>
                   </div>
@@ -295,7 +329,7 @@ function ClientDeploymentsPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[620px]">
+            <table className="w-full text-left border-collapse min-w-[640px]">
               <thead>
                 <tr className="border-b border-black/5 bg-[#FAF9F6] text-[10px] font-bold tracking-widest uppercase text-black/50">
                   <th className="px-5 py-4">Request Date</th>
@@ -362,7 +396,7 @@ function ClientDeploymentsPage() {
                                   {liveUrl}
                                 </span>
                                 <button
-                                  onClick={() => copyToClipboard(liveUrl)}
+                                  onClick={() => copyToClipboard(liveUrl, "Link")}
                                   className="p-1 text-[#DCA963] hover:text-[#201814] transition-colors"
                                   title="Copy Live Link"
                                 >
@@ -410,15 +444,14 @@ function ClientDeploymentsPage() {
                             </a>
                           )}
 
-                          {req.status === "HOSTED" && liveUrl && (
-                            <a
-                              href={liveUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-white bg-[#141210] hover:bg-[#DCA963] hover:text-[#141210] px-3 py-1.5 rounded-xl transition-all shadow-2xs"
+                          {req.status === "HOSTED" && (
+                            <button
+                              onClick={() => setSelectedShareInv(req.invitation)}
+                              className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-[#141210] bg-[#DCA963]/20 hover:bg-[#DCA963] px-3 py-1.5 rounded-xl transition-all shadow-2xs"
+                              title="Open Share Studio"
                             >
-                              <ExternalLink size={13} /> Open Live
-                            </a>
+                              <Share2 size={13} /> Share Text
+                            </button>
                           )}
 
                           <button
@@ -491,6 +524,15 @@ function ClientDeploymentsPage() {
           })}
         </div>
       </div>
+
+      {/* Interactive Wedding Share Modal */}
+      {selectedShareInv && (
+        <WeddingShareModal
+          isOpen={!!selectedShareInv}
+          onClose={() => setSelectedShareInv(null)}
+          invitation={selectedShareInv}
+        />
+      )}
     </div>
   );
 }

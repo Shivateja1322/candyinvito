@@ -124,6 +124,21 @@ const normalizeInvitation = (raw: any): Invitation => {
   } as Invitation;
 };
 
+export function generateSlugFromNames(names?: string): string {
+  if (!names || !names.trim() || names === "New Couple" || names === "Wedding Invitation") {
+    return `wedding-${crypto.randomUUID().split("-")[0]}`;
+  }
+  const clean = names
+    .toLowerCase()
+    .replace(/[&❤️+]/g, " and ")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+  
+  return clean ? `${clean}-${crypto.randomUUID().split("-")[0].substring(0, 4)}` : `wedding-${crypto.randomUUID().split("-")[0]}`;
+}
+
 export const invitationRepository = {
   list: async (): Promise<Invitation[]> => {
     try {
@@ -162,12 +177,13 @@ export const invitationRepository = {
     if (local[slug]) return normalizeInvitation(local[slug]);
     return null;
   },
-  create: async (userId: string, title: string, templateId: string): Promise<Invitation> => {
-    const slug = crypto.randomUUID().split("-")[0];
+  create: async (userId: string, title: string = "New Couple", templateId: string): Promise<Invitation> => {
+    const slug = generateSlugFromNames(title);
     const generatedId = crypto.randomUUID();
     const payload = {
       id: generatedId,
       client_id: userId,
+      title: title,
       couple_names: title,
       template_id: templateId,
       slug,
@@ -181,6 +197,7 @@ export const invitationRepository = {
       const { data, error } = await supabase.from("invitations").insert({
         id: generatedId,
         client_id: userId,
+        title: title,
         couple_names: title,
         template_id: templateId,
         slug,
@@ -208,15 +225,23 @@ export const invitationRepository = {
     return normalizeInvitation(payload);
   },
   update: async (invitationId: string, patch: Partial<Invitation>): Promise<Invitation> => {
+    const updateData: any = { ...patch };
+    if (patch.couple_names && !patch.title) {
+      updateData.title = patch.couple_names;
+    } else if (patch.title && !patch.couple_names) {
+      updateData.couple_names = patch.title;
+    }
+    updateData.updated_at = new Date().toISOString();
+
     try {
-      const { data, error } = await supabase.from("invitations").update(patch).eq("id", invitationId).select().single();
+      const { data, error } = await supabase.from("invitations").update(updateData).eq("id", invitationId).select().single();
       if (!error && data) return normalizeInvitation(data);
     } catch(e) {}
     
     const local = getLocalInvites();
     const slug = Object.keys(local).find(k => local[k].id === invitationId);
     if (slug) {
-      local[slug] = { ...local[slug], ...patch, updated_at: new Date().toISOString() };
+      local[slug] = { ...local[slug], ...updateData };
       setLocalInvites(local);
       return normalizeInvitation(local[slug]);
     }
@@ -286,36 +311,118 @@ export const themeRepository = {
 
 export const rsvpRepository = {
   listByInvitation: async (invitationId: string) => {
-    const { data, error } = await supabase.from("rsvps").select("*").eq("invitation_id", invitationId).order("created_at", { ascending: false });
-    if (error) {
-      // Fallback to mock
-      return delay(db.rsvps.filter((r) => r.invitationId === invitationId));
+    let dbRsvps: any[] = [];
+    try {
+      const { data, error } = await supabase
+        .from("rsvps")
+        .select("*")
+        .eq("invitation_id", invitationId)
+        .order("created_at", { ascending: false });
+      if (!error && data) {
+        dbRsvps = data;
+      }
+    } catch (e) {}
+
+    let localRsvps: any[] = [];
+    try {
+      const stored = JSON.parse(localStorage.getItem("local_rsvps") || "[]");
+      localRsvps = stored.filter(
+        (r: any) => r.invitation_id === invitationId || r.invitationId === invitationId,
+      );
+    } catch (_) {}
+
+    const idSet = new Set(dbRsvps.map((r) => r.id));
+    const combined = [...dbRsvps];
+    for (const lr of localRsvps) {
+      if (!idSet.has(lr.id)) {
+        combined.push(lr);
+      }
     }
-    return data;
+    return combined;
   },
   list: async () => {
-    const { data, error } = await supabase.from("rsvps").select("*, invitation:invitations(title, slug)").order("created_at", { ascending: false });
-    if (error) {
-      return delay(db.rsvps);
+    let dbRsvps: any[] = [];
+    try {
+      const { data, error } = await supabase
+        .from("rsvps")
+        .select("*, invitation:invitations(title, couple_names, slug)")
+        .order("created_at", { ascending: false });
+      if (!error && data) {
+        dbRsvps = data;
+      }
+    } catch (e) {}
+
+    let localRsvps: any[] = [];
+    try {
+      localRsvps = JSON.parse(localStorage.getItem("local_rsvps") || "[]");
+    } catch (_) {}
+
+    const idSet = new Set(dbRsvps.map((r) => r.id));
+    const combined = [...dbRsvps];
+    for (const lr of localRsvps) {
+      if (!idSet.has(lr.id)) {
+        combined.push(lr);
+      }
     }
-    return data;
+    return combined;
   },
-  create: async (input: Omit<Rsvp, "id" | "submittedAt">) => {
+  create: async (input: any) => {
+    const invitationId = input.invitation_id || input.invitationId || "";
+    const guestName = input.guest_name || input.guestName || input.name || "Guest";
+    const email = input.email || "";
+    const isAttending =
+      input.attending === "YES" ||
+      input.attending === true ||
+      input.status === "ATTENDING" ||
+      input.status === "YES";
+    const status = isAttending ? "ATTENDING" : "NOT_ATTENDING";
+    const guestsCount =
+      input.guests_count !== undefined
+        ? Number(input.guests_count)
+        : input.guestCount !== undefined
+          ? Number(input.guestCount)
+          : input.guests !== undefined
+            ? Number(input.guests)
+            : isAttending ? 1 : 0;
+    const message = input.message || input.dietaryRestrictions || "";
+
     const row = {
-      invitation_id: input.invitationId,
-      guest_name: input.guestName,
-      status: input.attending ? "ATTENDING" : "NOT_ATTENDING",
-      guests_count: input.guestCount || 1,
-      message: input.dietaryRestrictions || "",
-      email: "guest@example.com"
+      invitation_id: invitationId,
+      guest_name: guestName,
+      email: email,
+      status: status,
+      attending: isAttending ? "YES" : "NO",
+      guests_count: guestsCount,
+      message: message,
     };
-    const { data, error } = await supabase.from("rsvps").insert(row).select().single();
-    if (error) {
-      const created: Rsvp = { ...input, id: id("r"), submittedAt: new Date().toISOString() } as any;
-      db.rsvps = [created, ...db.rsvps];
-      return delay(created);
+
+    let insertedData: any = null;
+
+    try {
+      const { data, error } = await supabase.from("rsvps").insert(row).select().single();
+      if (!error && data) {
+        insertedData = data;
+      } else if (error) {
+        console.warn("Supabase RSVP insert warning:", error);
+      }
+    } catch (e) {
+      console.warn("Supabase RSVP insert exception:", e);
     }
-    return data;
+
+    // Always store a backup copy in local storage cache
+    const finalRecord = insertedData || {
+      id: crypto.randomUUID(),
+      created_at: new Date().toISOString(),
+      ...row,
+    };
+
+    try {
+      const localRsvps = JSON.parse(localStorage.getItem("local_rsvps") || "[]");
+      localRsvps.unshift(finalRecord);
+      localStorage.setItem("local_rsvps", JSON.stringify(localRsvps));
+    } catch (_) {}
+
+    return finalRecord;
   },
 };
 
